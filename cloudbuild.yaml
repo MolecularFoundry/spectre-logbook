@@ -32,7 +32,7 @@ steps:
 substitutions:
   _SERVICE_NAME: 'spectre-logbook'
   _REGION: 'us-central1'
-  _IMAGE_PATH: '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}-${BRANCH_NAME}'
+  _IMAGE_PATH: '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${BRANCH_NAME}'
   _SERVICE_URL: 'https://${_SERVICE_NAME}-${PROJECT_NUMBER}.us-central1.run.app'
 
 images:
