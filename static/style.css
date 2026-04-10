@@ -1,0 +1,328 @@
+/* ---- Reset & Base ---- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f5f6fa;
+    color: #333;
+    padding: 0;
+}
+
+/* ---- Tab Navigation ---- */
+.tab-nav {
+    display: flex;
+    background: #2c3e50;
+    padding: 0;
+}
+
+.tab-btn {
+    background: transparent;
+    color: #bdc3c7;
+    border: none;
+    padding: 14px 28px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.tab-btn:hover:not(:disabled) {
+    background: #34495e;
+    color: #ecf0f1;
+}
+
+.tab-btn.active {
+    background: #3498db;
+    color: #fff;
+}
+
+.tab-btn:disabled {
+    color: #636e72;
+    cursor: not-allowed;
+}
+
+a.tab-link {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* ---- Pages ---- */
+.page {
+    display: none;
+    max-width: 800px;
+    margin: 24px auto;
+    padding: 24px 32px;
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.page.active {
+    display: block;
+}
+
+/* ---- Typography ---- */
+h1 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.date-label {
+    color: #7f8c8d;
+    margin-bottom: 16px;
+}
+
+/* ---- Instructions ---- */
+.instructions {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.instructions summary {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 600;
+    background: #fafafa;
+    border-radius: 4px;
+}
+
+.instructions-body {
+    padding: 12px 14px;
+    line-height: 1.6;
+    font-size: 14px;
+    color: #555;
+}
+
+.instructions-body p {
+    margin-bottom: 10px;
+}
+
+.instructions-body code {
+    background: #f0f0f0;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+/* ---- Forms ---- */
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52,152,219,0.15);
+}
+
+/* ---- Checkbox groups ---- */
+.checkbox-group {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+}
+
+.checkbox-group legend {
+    font-weight: 600;
+    font-size: 14px;
+    padding: 0 4px;
+}
+
+.checkbox-group label {
+    display: block;
+    padding: 3px 0;
+    font-size: 14px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.checkbox-group label input[type="checkbox"] {
+    margin-right: 6px;
+}
+
+/* ---- Buttons ---- */
+.btn {
+    display: inline-block;
+    padding: 10px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    border: 2px solid #3498db;
+    border-radius: 4px;
+    background: #3498db;
+    color: #fff;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.btn:hover { background: #2980b9; border-color: #2980b9; }
+
+.btn.primary { background: #27ae60; border-color: #27ae60; }
+.btn.primary:hover { background: #219a52; border-color: #219a52; }
+
+.btn.danger { background: #e74c3c; border-color: #e74c3c; }
+.btn.danger:hover { background: #c0392b; border-color: #c0392b; }
+
+.btn.outline {
+    background: transparent;
+    color: #3498db;
+}
+.btn.outline:hover {
+    background: #3498db;
+    color: #fff;
+}
+
+.btn.flash-success {
+    background: #27ae60;
+    border-color: #27ae60;
+    transition: background 0.2s;
+}
+
+.btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+/* ---- Recap ---- */
+.recap {
+    background: #f9f9f9;
+    border-left: 4px solid #3498db;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+/* ---- Status messages ---- */
+.status-msg {
+    margin-top: 12px;
+    font-size: 14px;
+    min-height: 20px;
+}
+
+.status-msg.success { color: #27ae60; }
+.status-msg.error { color: #e74c3c; }
+
+/* ---- Title row (public log viewer) ---- */
+.title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.external-link {
+    font-size: 20px;
+    text-decoration: none;
+    color: #3498db;
+}
+
+/* ---- Logs toolbar ---- */
+.logs-toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.logs-toolbar input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.logs-toolbar input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52,152,219,0.15);
+}
+
+/* ---- Table ---- */
+.table-wrapper {
+    overflow-x: auto;
+    margin: 14px 0;
+}
+
+#log-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+}
+
+#log-table th,
+#log-table td {
+    border: 1px solid #ddd;
+    padding: 8px 10px;
+    text-align: left;
+}
+
+#log-table th {
+    background: #f0f0f0;
+    position: sticky;
+    top: 0;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#log-table th:hover { background: #e0e0e0; }
+
+#log-table tbody tr:nth-child(even) { background: #fafafa; }
+#log-table tbody tr:hover { background: #eef6fb; }
+
+/* ---- Modal ---- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 8px;
+    padding: 32px 36px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.modal-msg {
+    font-size: 16px;
+    margin-bottom: 24px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}

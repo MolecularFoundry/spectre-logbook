@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPECTRE Microscope Logbook</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- Tab Navigation -->
+<nav class="tab-nav">
+    <button class="tab-btn active" data-page="login">Login</button>
+    <button class="tab-btn" data-page="public-logs">Public Logs</button>
+    <a href="http://localhost:5000" target="_blank" class="tab-btn tab-link">Upload Data to Crucible</a>
+</nav>
+
+<!-- Logout modal -->
+<div id="logout-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <p class="modal-msg">Session saved successfully.</p>
+        <div class="modal-buttons">
+            <button id="modal-login-btn" class="btn primary">Back to Login</button>
+            <button id="modal-logs-btn" class="btn">View Logs</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- PAGE 1: LOGIN                                                     -->
+<!-- ================================================================ -->
+<div id="page-login" class="page active">
+    <h1>SPECTRE Microscope &mdash; Login</h1>
+    <p class="date-label" id="date-label"></p>
+
+    <!-- Collapsible instructions -->
+    <details class="instructions">
+        <summary>Instructions (click to expand)</summary>
+        <div class="instructions-body">
+            <p>1. Fill in your LBL email address. Your name and project will be auto-filled from the Crucible backend.</p>
+            <p>2. Choose your project from the drop-down menu &ndash; its title will appear next to it.</p>
+            <p>3. Enter a short descriptive &ldquo;Session Name&rdquo;.</p>
+            <p>4. When finished, click &ldquo;Logout and Save Log&rdquo;.</p>
+            <p>5. View the public log under the &ldquo;Public Logs&rdquo; tab above.</p>
+        </div>
+    </details>
+
+    <div class="form-group">
+        <label for="email-input">Email:</label>
+        <input type="email" id="email-input" placeholder="user@lbl.gov">
+    </div>
+
+    <div class="form-group">
+        <label for="name-input">User Name:</label>
+        <input type="text" id="name-input" placeholder="Auto-filled name">
+    </div>
+
+    <div class="form-group">
+        <label for="orcid-input">ORCID:</label>
+        <input type="text" id="orcid-input" placeholder="XXXX-XXXX-XXXX-XXXX">
+    </div>
+
+    <div class="form-group">
+        <label for="proposal-box">Project:</label>
+        <select id="proposal-box">
+            <option value="">-- enter email to load projects --</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="session-input">Session Name:</label>
+        <input type="text" id="session-input" placeholder="Short session name (e.g., MoO3 Grid B3)">
+    </div>
+
+    <button id="login-btn" class="btn primary">Login and Save Metadata</button>
+    <div id="login-status" class="status-msg"></div>
+</div>
+
+<!-- ================================================================ -->
+<!-- PAGE 2: LOGBOOK                                                   -->
+<!-- ================================================================ -->
+<div id="page-logbook" class="page">
+    <h1>SPECTRE Microscope &mdash; Log Book</h1>
+
+    <div id="recap" class="recap">
+        <em>(user and proposal auto-filled after login)</em>
+    </div>
+
+    <!-- kV -->
+    <fieldset class="checkbox-group">
+        <legend>kV:</legend>
+        <label><input type="checkbox" name="kv" value="60kV"> 60kV</label>
+        <label><input type="checkbox" name="kv" value="200kV"> 200kV</label>
+        <label><input type="checkbox" name="kv" value="300kV"> 300kV</label>
+    </fieldset>
+
+    <!-- Detectors / Modes -->
+    <fieldset class="checkbox-group">
+        <legend>Detectors / Modes Used:</legend>
+        <label><input type="checkbox" name="modes" value="Monochromator"> Monochromator</label>
+        <label><input type="checkbox" name="modes" value="UltiMono"> UltiMono</label>
+        <label><input type="checkbox" name="modes" value="Ultra-X EDS"> Ultra-X EDS</label>
+        <label><input type="checkbox" name="modes" value="EMPAD"> EMPAD</label>
+        <label><input type="checkbox" name="modes" value="K3"> K3</label>
+        <label><input type="checkbox" name="modes" value="EELS"> EELS</label>
+        <label><input type="checkbox" name="modes" value="EFTEM Imaging"> EFTEM Imaging</label>
+        <label><input type="checkbox" name="modes" value="Lorentz"> Lorentz</label>
+        <label><input type="checkbox" name="modes" value="M&ouml;nch (light injection)"> M&ouml;nch (light injection)</label>
+        <label><input type="checkbox" name="modes" value="CL"> CL</label>
+    </fieldset>
+
+    <!-- Holders -->
+    <fieldset class="checkbox-group">
+        <legend>Holder(s) Used:</legend>
+        <label><input type="checkbox" name="holders" value="Ultra-X DT"> Ultra-X DT</label>
+        <label><input type="checkbox" name="holders" value="Ultra-X Tomography (Fischione)"> Ultra-X Tomography (Fischione)</label>
+        <label><input type="checkbox" name="holders" value="Ultra-X Cryo (Simple Origin)"> Ultra-X Cryo (Simple Origin)</label>
+        <label><input type="checkbox" name="holders" value="CL Cryo (MelBuild)"> CL Cryo (MelBuild)</label>
+        <label><input type="checkbox" name="holders" value="Other (custom)"> Other (custom)</label>
+    </fieldset>
+
+    <div class="form-group">
+        <label for="holder-other">Custom holder:</label>
+        <input type="text" id="holder-other" placeholder="Enter custom holder if selected 'Other'">
+    </div>
+
+    <!-- Annotate + Report -->
+    <div class="form-group">
+        <label for="annotate">Annotate (private):</label>
+        <textarea id="annotate" rows="4" placeholder="Private notes about session."></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="report">Report Issue (public):</label>
+        <textarea id="report" rows="4" placeholder="Performance issues or maintenance notes visible to staff."></textarea>
+    </div>
+
+    <div class="btn-row">
+        <button id="update-btn" class="btn">Add to Log</button>
+        <a href="http://localhost:5000" target="_blank" class="btn outline">Upload Data to Crucible</a>
+        <button id="logout-btn" class="btn danger">Logout and Save Log</button>
+    </div>
+
+    <div id="logbook-status" class="status-msg"></div>
+</div>
+
+<!-- ================================================================ -->
+<!-- PAGE 3: PUBLIC LOG VIEWER                                         -->
+<!-- ================================================================ -->
+<div id="page-public-logs" class="page">
+    <div class="title-row">
+        <h1>Public Logbook</h1>
+    </div>
+
+    <div class="logs-toolbar">
+        <button id="refresh-logs-btn" class="btn">Refresh Logs</button>
+        <input type="text" id="log-filter" placeholder="Filter logs...">
+    </div>
+
+    <div class="table-wrapper">
+        <table id="log-table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Event</th>
+                    <th>User</th>
+                    <th>Session</th>
+                    <th>Proposal</th>
+                    <th>Title</th>
+                    <th>kV</th>
+                    <th>Modes</th>
+                    <th>Holders</th>
+                    <th>Report</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <button id="download-csv-btn" class="btn outline">Download Admin CSV (password required)</button>
+
+    <button id="refresh-logs-btn-bottom" class="btn" style="margin-top:8px;">Refresh Logs</button>
+
+    <div id="logs-status" class="status-msg"></div>
+</div>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
