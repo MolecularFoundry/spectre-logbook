@@ -516,8 +516,10 @@ class SpectreBackend:
         data = self._read_json_list(agg_json)
         rows = []
         for e in data:
+            if e.get("type") != "logout":
+                continue
             rows.append({
-                "timestamp": e.get("timestamp", ""),
+                "timestamp": e.get("timestamp", "")[:19],
                 "event": e.get("type", ""),
                 "user": e.get("user_name", ""),
                 "session": e.get("session_name", ""),
@@ -528,6 +530,7 @@ class SpectreBackend:
                 "holders": ", ".join(e.get("holders", [])),
                 "report": e.get("report_public", ""),
             })
+        rows.sort(key=lambda r: r["timestamp"], reverse=True)
         return rows
 
     def get_admin_csv_path(self, password):
