@@ -23,7 +23,6 @@ steps:
       - '--set-secrets'
       - >-
         CRUCIBLE_API_KEY=crucible_admin_apikey:latest,
-        ALS_SAMPLE_TRACKER_PASSWORD=als-sample-tracker-apikey:latest
         SPECTRE_ADMIN_PASSWORD=spectre-logbook-password:latest
       - '--service-account'
       - 'spectre-logbook-cloudrun@mf-crucible.iam.gserviceaccount.com'
