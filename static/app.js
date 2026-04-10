@@ -121,7 +121,7 @@
         var email = emailInput.value.trim();
         if (!email || email.indexOf("@lbl.gov") === -1) return;
 
-        fetch("/api/lookup-email", {
+        fetch("api/lookup-email", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: email }),
@@ -165,7 +165,7 @@
         var code = proposalBox.value;
         if (!code) return;
 
-        fetch("/api/proposal-title/" + encodeURIComponent(code))
+        fetch("api/proposal-title/" + encodeURIComponent(code))
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (data.title) {
@@ -198,7 +198,7 @@
             session_name: sessionName,
         };
 
-        fetch("/api/login", {
+        fetch("api/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -241,7 +241,7 @@
     // ---- Update metadata ----
     updateBtn.addEventListener("click", function () {
         var data = collectLogbookData();
-        fetch("/api/update", {
+        fetch("api/update", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -270,7 +270,7 @@
     // ---- Logout ----
     logoutBtn.addEventListener("click", function () {
         var data = collectLogbookData();
-        fetch("/api/logout", {
+        fetch("api/logout", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -308,7 +308,7 @@
 
     // ---- Public logs: refresh ----
     function refreshLogs() {
-        fetch("/api/public-logs")
+        fetch("api/public-logs")
             .then(function (r) { return r.json(); })
             .then(function (rows) {
                 logTableBody.innerHTML = "";
@@ -357,12 +357,34 @@
         });
     });
 
+    // ---- Upload links (pass email + project as query params) ----
+    var uploadTab = document.getElementById("upload-tab");
+    var uploadBtn = document.getElementById("upload-btn");
+
+    function buildUploadUrl() {
+        var base = "http://localhost:5000";
+        var params = [];
+        var email = emailInput.value.trim();
+        var project = proposalBox.value || "";
+        if (email) params.push("email=" + encodeURIComponent(email));
+        if (project) params.push("project=" + encodeURIComponent(project));
+        return params.length ? base + "?" + params.join("&") : base;
+    }
+
+    uploadTab.addEventListener("click", function () {
+        uploadTab.href = buildUploadUrl();
+    });
+
+    uploadBtn.addEventListener("click", function () {
+        uploadBtn.href = buildUploadUrl();
+    });
+
     // ---- Admin CSV download ----
     downloadCsvBtn.addEventListener("click", function () {
         var password = prompt("Enter admin password:");
         if (!password) return;
 
-        fetch("/api/admin-csv", {
+        fetch("api/admin-csv", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ password: password }),
