@@ -27,6 +27,8 @@ steps:
       - '--service-account'
       - 'spectre-logbook-cloudrun@mf-crucible.iam.gserviceaccount.com'
       - '--allow-unauthenticated'
+      - '--add-volume=name=gcs-logs,type=cloud-storage,bucket=spectre-logs'
+      - '--add-volume-mount=volume=gcs-logs,mount-path=/app/runtime'
 
 substitutions:
   _SERVICE_NAME: 'spectre-logbook'
