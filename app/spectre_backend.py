@@ -62,7 +62,7 @@ class SpectreBackend:
 
     def _agg_paths(self):
         agg_json = os.path.join(self.log_dir, "spectre_agg.json")
-        admin_csv = os.path.join(self.log_dir, "admin_logs", "spectre_admin_log_csv.csv")
+        admin_csv = os.path.join(self.log_dir, "admin_logs", "spectre_admin_log.csv")
         os.makedirs(os.path.dirname(admin_csv), exist_ok=True)
         return agg_json, admin_csv
 
@@ -519,7 +519,7 @@ class SpectreBackend:
             if e.get("type") != "logout":
                 continue
             rows.append({
-                "timestamp": e.get("timestamp", "")[:19],
+                "timestamp": e.get("timestamp", ""),
                 "event": e.get("type", ""),
                 "user": e.get("user_name", ""),
                 "session": e.get("session_name", ""),
