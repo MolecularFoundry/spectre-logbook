@@ -52,7 +52,7 @@ class SpectreBackend:
         return re.sub(r'[^A-Za-z0-9._-]+', '_', s.strip())[:80] if s else ""
 
     def _now(self):
-        return datetime.now().isoformat()
+        return datetime.now().isoformat(sep=' ', timespec='minutes')
 
     def _ensure_dirs(self):
         os.makedirs(self.log_dir, exist_ok=True)
@@ -520,7 +520,6 @@ class SpectreBackend:
                 continue
             rows.append({
                 "timestamp": e.get("timestamp", ""),
-                "event": e.get("type", ""),
                 "user": e.get("user_name", ""),
                 "session": e.get("session_name", ""),
                 "proposal": e.get("proposal", ""),
