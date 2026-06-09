@@ -39,8 +39,8 @@ class SpectreBackend:
         self.user_log_path = None
         self.session_data = {}
 
-        # Crucible client (reads CRUCIBLE_API_KEY and CRUCIBLE_API_URL from env)
-        self.client = CrucibleClient()
+        # Crucible client (reads api_key and api_url from env)
+        self.client = CrucibleClient(api_url = 'https://crucible.lbl.gov/api/v2')
 
         # Admin password from env
         self.admin_password = os.environ.get("SPECTRE_ADMIN_PASSWORD", "")
@@ -444,7 +444,7 @@ class SpectreBackend:
                 return {"ok": False, "error": "User not found."}
 
             full_name = f"{user_info.get('first_name', '')} {user_info.get('last_name', '')}".strip()
-            orcid = user_info.get("orcid", "")
+            orcid = user_info.get("unique_id", "")
 
             # Get projects for this user
             projects = []
