@@ -40,7 +40,7 @@ class SpectreBackend:
         self.session_data = {}
 
         # Crucible client (reads api_key and api_url from env)
-        self.client = CrucibleClient(api_url = 'https://crucible.lbl.gov/api/v2')
+        self.client = CrucibleClient(api_url = 'https://crucible.lbl.gov/api/v2', apikey = os.environ.get("CRUCIBLE_API_KEY", ""))
 
         # Admin password from env
         self.admin_password = os.environ.get("SPECTRE_ADMIN_PASSWORD", "")
