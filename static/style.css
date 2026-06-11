@@ -163,6 +163,79 @@ h1 {
     margin-right: 6px;
 }
 
+/* ---- Dynamic option lists ---- */
+.options-list label {
+    display: block;
+    padding: 3px 0;
+    font-size: 14px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.options-list label input[type="checkbox"] {
+    margin-right: 6px;
+}
+
+/* ---- Admin options editor ---- */
+.admin-editor {
+    margin-top: 20px;
+}
+
+.admin-list-group {
+    margin-bottom: 16px;
+}
+
+.admin-list-group h3 {
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
+.admin-list {
+    list-style: none;
+    margin: 0 0 8px;
+    padding: 0;
+}
+
+.admin-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-size: 14px;
+    background: #fafafa;
+}
+
+.admin-remove-btn {
+    border: none;
+    background: transparent;
+    color: #e74c3c;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+.admin-remove-btn:hover { color: #c0392b; }
+
+.admin-add-row {
+    display: flex;
+    gap: 8px;
+}
+
+.admin-add-row input {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.admin-add-row .admin-add-btn {
+    padding: 6px 14px;
+}
+
 /* ---- Buttons ---- */
 .btn {
     display: inline-block;
@@ -263,9 +336,19 @@ h1 {
     box-shadow: 0 0 0 2px rgba(52,152,219,0.15);
 }
 
+/* ---- Wide page (standalone public log) ---- */
+.page-wide {
+    max-width: 1200px;
+}
+
+.table-hint {
+    font-size: 13px;
+    color: #7f8c8d;
+    margin: 8px 0 0;
+}
+
 /* ---- Table ---- */
 .table-wrapper {
-    overflow-x: auto;
     margin: 14px 0;
 }
 
@@ -273,6 +356,7 @@ h1 {
     border-collapse: collapse;
     width: 100%;
     font-size: 13px;
+    table-layout: fixed;
 }
 
 #log-table th,
@@ -280,6 +364,9 @@ h1 {
     border: 1px solid #ddd;
     padding: 8px 10px;
     text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 #log-table th {
@@ -287,13 +374,46 @@ h1 {
     position: sticky;
     top: 0;
     cursor: pointer;
-    white-space: nowrap;
+}
+
+/* Report is the most important column — give it the most room. */
+#log-table th.col-report,
+#log-table td.col-report {
+    width: 28%;
 }
 
 #log-table th:hover { background: #e0e0e0; }
 
-#log-table tbody tr:nth-child(even) { background: #fafafa; }
-#log-table tbody tr:hover { background: #eef6fb; }
+/* Truncate long cells in the collapsed row; expand to see everything. */
+#log-table tbody tr.data-row td {
+    max-height: 4.5em;
+}
+
+#log-table tbody tr.data-row { cursor: pointer; }
+#log-table tbody tr.data-row:hover { background: #eef6fb; }
+#log-table tbody tr.data-row.expanded { background: #eef6fb; }
+
+/* ---- Expandable detail row ---- */
+#log-table tbody tr.detail-row { display: none; }
+#log-table tbody tr.detail-row.open { display: table-row; }
+#log-table tbody tr.detail-row td { background: #f7fbfe; }
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 16px;
+    margin: 0;
+}
+
+.detail-grid dt {
+    font-weight: 600;
+    color: #555;
+}
+
+.detail-grid dd {
+    margin: 0;
+    white-space: pre-wrap;
+}
 
 /* ---- Modal ---- */
 .modal-overlay {

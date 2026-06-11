@@ -56,6 +56,25 @@ def public_logs():
     return jsonify(rows)
 
 
+@api.route("/public-logs")
+def public_logs_page():
+    return render_template("public_logs.html")
+
+
+@api.route("/api/options")
+def options():
+    return jsonify(backend.get_options())
+
+
+@api.route("/api/admin-options", methods=["POST"])
+def admin_options():
+    data = request.get_json(force=True)
+    password = data.get("password", "")
+    result = backend.update_options(password, data.get("options", {}))
+    status = 200 if result.get("ok") else 403
+    return jsonify(result), status
+
+
 @api.route("/api/admin-csv", methods=["POST"])
 def admin_csv():
     data = request.get_json(force=True)

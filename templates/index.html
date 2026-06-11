@@ -11,7 +11,7 @@
 <!-- Tab Navigation -->
 <nav class="tab-nav">
     <button class="tab-btn active" data-page="login">Login</button>
-    <button class="tab-btn" data-page="public-logs">Public Logs</button>
+    <a href="public-logs" target="_blank" class="tab-btn tab-link">Public Logs</a>
     <a href="http://localhost:5000" target="_blank" class="tab-btn tab-link" id="upload-tab">Upload Data to Crucible</a>
 </nav>
 
@@ -74,6 +74,47 @@
 
     <button id="login-btn" class="btn primary">Login and Save Metadata</button>
     <div id="login-status" class="status-msg"></div>
+
+    <!-- Admin: edit the option lists shown to users -->
+    <details class="instructions admin-editor">
+        <summary>Admin: Edit Options (kV / Detectors / Holders)</summary>
+        <div class="instructions-body">
+            <div class="form-group">
+                <label for="admin-password">Admin password:</label>
+                <input type="password" id="admin-password" placeholder="Required to save changes">
+            </div>
+
+            <div class="admin-list-group">
+                <h3>kV options</h3>
+                <ul id="admin-kv-list" class="admin-list"></ul>
+                <div class="admin-add-row">
+                    <input type="text" id="admin-kv-new" placeholder="Add kV option">
+                    <button type="button" class="btn outline admin-add-btn" data-list="kv">Add</button>
+                </div>
+            </div>
+
+            <div class="admin-list-group">
+                <h3>Detector / Mode options</h3>
+                <ul id="admin-modes-list" class="admin-list"></ul>
+                <div class="admin-add-row">
+                    <input type="text" id="admin-modes-new" placeholder="Add detector/mode option">
+                    <button type="button" class="btn outline admin-add-btn" data-list="modes">Add</button>
+                </div>
+            </div>
+
+            <div class="admin-list-group">
+                <h3>Holder options</h3>
+                <ul id="admin-holders-list" class="admin-list"></ul>
+                <div class="admin-add-row">
+                    <input type="text" id="admin-holders-new" placeholder="Add holder option">
+                    <button type="button" class="btn outline admin-add-btn" data-list="holders">Add</button>
+                </div>
+            </div>
+
+            <button id="admin-save-btn" class="btn primary">Save Options</button>
+            <div id="admin-status" class="status-msg"></div>
+        </div>
+    </details>
 </div>
 
 <!-- ================================================================ -->
@@ -86,37 +127,22 @@
         <em>(user and proposal auto-filled after login)</em>
     </div>
 
-    <!-- kV -->
+    <!-- kV (populated from /api/options) -->
     <fieldset class="checkbox-group">
         <legend>kV:</legend>
-        <label><input type="checkbox" name="kv" value="60kV"> 60kV</label>
-        <label><input type="checkbox" name="kv" value="200kV"> 200kV</label>
-        <label><input type="checkbox" name="kv" value="300kV"> 300kV</label>
+        <div id="kv-options" class="options-list"></div>
     </fieldset>
 
-    <!-- Detectors / Modes -->
+    <!-- Detectors / Modes (populated from /api/options) -->
     <fieldset class="checkbox-group">
         <legend>Detectors / Modes Used:</legend>
-        <label><input type="checkbox" name="modes" value="Monochromator"> Monochromator</label>
-        <label><input type="checkbox" name="modes" value="UltiMono"> UltiMono</label>
-        <label><input type="checkbox" name="modes" value="Ultra-X EDS"> Ultra-X EDS</label>
-        <label><input type="checkbox" name="modes" value="EMPAD"> EMPAD</label>
-        <label><input type="checkbox" name="modes" value="K3"> K3</label>
-        <label><input type="checkbox" name="modes" value="EELS"> EELS</label>
-        <label><input type="checkbox" name="modes" value="EFTEM Imaging"> EFTEM Imaging</label>
-        <label><input type="checkbox" name="modes" value="Lorentz"> Lorentz</label>
-        <label><input type="checkbox" name="modes" value="M&ouml;nch (light injection)"> M&ouml;nch (light injection)</label>
-        <label><input type="checkbox" name="modes" value="CL"> CL</label>
+        <div id="modes-options" class="options-list"></div>
     </fieldset>
 
-    <!-- Holders -->
+    <!-- Holders (populated from /api/options) -->
     <fieldset class="checkbox-group">
         <legend>Holder(s) Used:</legend>
-        <label><input type="checkbox" name="holders" value="Ultra-X DT"> Ultra-X DT</label>
-        <label><input type="checkbox" name="holders" value="Ultra-X Tomography (Fischione)"> Ultra-X Tomography (Fischione)</label>
-        <label><input type="checkbox" name="holders" value="Ultra-X Cryo (Simple Origin)"> Ultra-X Cryo (Simple Origin)</label>
-        <label><input type="checkbox" name="holders" value="CL Cryo (MelBuild)"> CL Cryo (MelBuild)</label>
-        <label><input type="checkbox" name="holders" value="Other (custom)"> Other (custom)</label>
+        <div id="holders-options" class="options-list"></div>
     </fieldset>
 
     <div class="form-group">
@@ -142,46 +168,6 @@
     </div>
 
     <div id="logbook-status" class="status-msg"></div>
-</div>
-
-<!-- ================================================================ -->
-<!-- PAGE 3: PUBLIC LOG VIEWER                                         -->
-<!-- ================================================================ -->
-<div id="page-public-logs" class="page">
-    <div class="title-row">
-        <h1>Public Logbook</h1>
-    </div>
-
-    <div class="logs-toolbar">
-        <button id="refresh-logs-btn" class="btn">Refresh Logs</button>
-        <input type="text" id="log-filter" placeholder="Filter logs...">
-    </div>
-
-    <div class="table-wrapper">
-        <table id="log-table">
-            <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>Event</th>
-                    <th>User</th>
-                    <th>Session</th>
-                    <th>Proposal</th>
-                    <th>Title</th>
-                    <th>kV</th>
-                    <th>Modes</th>
-                    <th>Holders</th>
-                    <th>Report</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <button id="download-csv-btn" class="btn outline">Download Admin CSV (password required)</button>
-
-    <button id="refresh-logs-btn-bottom" class="btn" style="margin-top:8px;">Refresh Logs</button>
-
-    <div id="logs-status" class="status-msg"></div>
 </div>
 
 <script src="static/app.js"></script>

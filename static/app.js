@@ -27,13 +27,6 @@
     var logoutBtn = document.getElementById("logout-btn");
     var logbookStatus = document.getElementById("logbook-status");
 
-    // Public logs page
-    var logTableBody = document.querySelector("#log-table tbody");
-    var refreshBtn = document.getElementById("refresh-logs-btn");
-    var refreshBtnBottom = document.getElementById("refresh-logs-btn-bottom");
-    var downloadCsvBtn = document.getElementById("download-csv-btn");
-    var logsStatus = document.getElementById("logs-status");
-
     // Logout modal
     var logoutModal = document.getElementById("logout-modal");
     var modalLoginBtn = document.getElementById("modal-login-btn");
@@ -60,6 +53,8 @@
     tabs.forEach(function (btn) {
         btn.addEventListener("click", function () {
             if (btn.disabled) return;
+            // Anchor tabs (e.g. Public Logs, Upload) navigate on their own.
+            if (!btn.dataset.page) return;
             switchPage(btn.dataset.page);
         });
     });
@@ -71,6 +66,13 @@
         if (!isError) {
             setTimeout(function () { el.textContent = ""; }, 5000);
         }
+    }
+
+    // Show "code — title" only when the title exists and differs from the code.
+    function formatProposalLabel(code, title) {
+        code = (code || "").trim();
+        title = (title || "").trim();
+        return title && title !== code ? code + " — " + title : code;
     }
 
     function getChecked(name) {
@@ -144,7 +146,7 @@
                     sorted.forEach(function (p) {
                         var opt = document.createElement("option");
                         opt.value = p.code;
-                        opt.textContent = p.title ? p.code + " \u2014 " + p.title : p.code;
+                        opt.textContent = formatProposalLabel(p.code, p.title);
                         proposalBox.appendChild(opt);
                     });
                 } else {
@@ -170,7 +172,7 @@
             .then(function (data) {
                 if (data.title) {
                     var sel = proposalBox.options[proposalBox.selectedIndex];
-                    sel.textContent = data.code + " \u2014 " + data.title;
+                    sel.textContent = formatProposalLabel(data.code, data.title);
                 }
             })
             .catch(function () { /* ignore */ });
@@ -209,10 +211,9 @@
                     showStatus(loginStatus, data.error || "Login failed.", true);
                     return;
                 }
-                var titleText = data.proposal_title ? " \u2014 " + data.proposal_title : "";
                 recap.innerHTML =
                     "<b>User:</b> " + data.user_name + "<br>" +
-                    "<b>Project:</b> " + data.proposal + titleText + "<br>" +
+                    "<b>Project:</b> " + data.proposal + "<br>" +
                     "<b>Email:</b> " + data.email + "<br>" +
                     "<b>Login Time:</b> " + data.login_time + "<br>" +
                     "<b>Session ID:</b> " + data.session_id;
@@ -302,59 +303,7 @@
 
     modalLogsBtn.addEventListener("click", function () {
         logoutModal.style.display = "none";
-        switchPage("public-logs");
-        refreshLogs();
-    });
-
-    // ---- Public logs: refresh ----
-    function refreshLogs() {
-        fetch("api/public-logs")
-            .then(function (r) { return r.json(); })
-            .then(function (rows) {
-                logTableBody.innerHTML = "";
-                rows.forEach(function (row) {
-                    var tr = document.createElement("tr");
-                    ["timestamp", "event", "user", "session", "proposal", "title", "kv", "modes", "holders", "report"]
-                        .forEach(function (key) {
-                            var td = document.createElement("td");
-                            td.textContent = row[key] || "";
-                            tr.appendChild(td);
-                        });
-                    logTableBody.appendChild(tr);
-                });
-                showStatus(logsStatus, "Public logs refreshed (" + rows.length + " entries).", false);
-            })
-            .catch(function (err) {
-                showStatus(logsStatus, "Error loading logs: " + err, true);
-            });
-    }
-
-    refreshBtn.addEventListener("click", refreshLogs);
-    refreshBtnBottom.addEventListener("click", refreshLogs);
-
-    // ---- Log filter ----
-    var logFilter = document.getElementById("log-filter");
-    logFilter.addEventListener("keyup", function () {
-        var f = logFilter.value.toLowerCase();
-        var rows = logTableBody.querySelectorAll("tr");
-        rows.forEach(function (row) {
-            row.style.display = row.textContent.toLowerCase().indexOf(f) !== -1 ? "" : "none";
-        });
-    });
-
-    // ---- Column sorting ----
-    document.querySelectorAll("#log-table th").forEach(function (th, colIdx) {
-        var ascending = true;
-        th.addEventListener("click", function () {
-            var rows = Array.from(logTableBody.querySelectorAll("tr"));
-            rows.sort(function (a, b) {
-                var aText = a.cells[colIdx].textContent;
-                var bText = b.cells[colIdx].textContent;
-                return ascending ? aText.localeCompare(bText) : bText.localeCompare(aText);
-            });
-            ascending = !ascending;
-            rows.forEach(function (row) { logTableBody.appendChild(row); });
-        });
+        window.open("public-logs", "_blank");
     });
 
     // ---- Upload links (pass email + project as query params) ----
@@ -379,35 +328,123 @@
         uploadBtn.href = buildUploadUrl();
     });
 
-    // ---- Admin CSV download ----
-    downloadCsvBtn.addEventListener("click", function () {
-        var password = prompt("Enter admin password:");
-        if (!password) return;
+    // ================================================================
+    // Option lists (kV / detectors / holders) — rendered from backend
+    // and editable by admins.
+    // ================================================================
+    var OPTION_LISTS = ["kv", "modes", "holders"];
+    var currentOptions = { kv: [], modes: [], holders: [] };
 
-        fetch("api/admin-csv", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password: password }),
-        })
-            .then(function (r) {
-                if (!r.ok) {
-                    return r.json().then(function (d) { throw new Error(d.error || "Access denied."); });
-                }
-                return r.blob();
-            })
-            .then(function (blob) {
-                var url = URL.createObjectURL(blob);
-                var a = document.createElement("a");
-                a.href = url;
-                a.download = "spectre_admin_log.csv";
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(url);
-                showStatus(logsStatus, "Admin CSV downloaded.", false);
+    var adminPassword = document.getElementById("admin-password");
+    var adminSaveBtn = document.getElementById("admin-save-btn");
+    var adminStatus = document.getElementById("admin-status");
+
+    // Render the user-facing checkboxes for each list, preserving checked values.
+    function renderCheckboxes() {
+        OPTION_LISTS.forEach(function (list) {
+            var container = document.getElementById(list + "-options");
+            if (!container) return;
+            var checked = getChecked(list);
+            container.innerHTML = "";
+            currentOptions[list].forEach(function (value) {
+                var label = document.createElement("label");
+                var input = document.createElement("input");
+                input.type = "checkbox";
+                input.name = list;
+                input.value = value;
+                if (checked.indexOf(value) !== -1) input.checked = true;
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(" " + value));
+                container.appendChild(label);
+            });
+        });
+    }
+
+    // Render the admin editor rows (each with a remove button).
+    function renderAdminLists() {
+        OPTION_LISTS.forEach(function (list) {
+            var ul = document.getElementById("admin-" + list + "-list");
+            if (!ul) return;
+            ul.innerHTML = "";
+            currentOptions[list].forEach(function (value, idx) {
+                var li = document.createElement("li");
+                var span = document.createElement("span");
+                span.textContent = value;
+                var rm = document.createElement("button");
+                rm.type = "button";
+                rm.className = "admin-remove-btn";
+                rm.textContent = "✕";
+                rm.addEventListener("click", function () {
+                    currentOptions[list].splice(idx, 1);
+                    renderAdminLists();
+                });
+                li.appendChild(span);
+                li.appendChild(rm);
+                ul.appendChild(li);
+            });
+        });
+    }
+
+    function loadOptions() {
+        fetch("api/options")
+            .then(function (r) { return r.json(); })
+            .then(function (opts) {
+                OPTION_LISTS.forEach(function (list) {
+                    currentOptions[list] = Array.isArray(opts[list]) ? opts[list] : [];
+                });
+                renderCheckboxes();
+                renderAdminLists();
             })
             .catch(function (err) {
-                showStatus(logsStatus, err.message || "Download failed.", true);
+                showStatus(logbookStatus, "Could not load options: " + err, true);
+            });
+    }
+
+    // Add buttons in the admin editor
+    document.querySelectorAll(".admin-add-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var list = btn.dataset.list;
+            var input = document.getElementById("admin-" + list + "-new");
+            var value = input.value.trim();
+            if (!value) return;
+            if (currentOptions[list].indexOf(value) === -1) {
+                currentOptions[list].push(value);
+                renderAdminLists();
+            }
+            input.value = "";
+        });
+    });
+
+    // Save updated options (password-gated on the backend)
+    adminSaveBtn.addEventListener("click", function () {
+        var password = adminPassword.value.trim();
+        if (!password) {
+            showStatus(adminStatus, "Admin password is required.", true);
+            return;
+        }
+        fetch("api/admin-options", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: password, options: currentOptions }),
+        })
+            .then(function (r) {
+                return r.json().then(function (d) { return { ok: r.ok, data: d }; });
+            })
+            .then(function (res) {
+                if (!res.ok || !res.data.ok) {
+                    throw new Error(res.data.error || "Save failed.");
+                }
+                OPTION_LISTS.forEach(function (list) {
+                    currentOptions[list] = res.data.options[list] || [];
+                });
+                renderCheckboxes();
+                renderAdminLists();
+                showStatus(adminStatus, "Options saved.", false);
+            })
+            .catch(function (err) {
+                showStatus(adminStatus, err.message || "Save failed.", true);
             });
     });
+
+    loadOptions();
 })();

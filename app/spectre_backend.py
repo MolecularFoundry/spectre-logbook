@@ -45,6 +45,11 @@ class SpectreBackend:
         # Admin password from env
         self.admin_password = os.environ.get("SPECTRE_ADMIN_PASSWORD", "")
 
+        # Shipped default options (seed for the editable runtime copy)
+        self.default_options_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "options.json"
+        )
+
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
@@ -531,6 +536,74 @@ class SpectreBackend:
             })
         rows.sort(key=lambda r: r["timestamp"], reverse=True)
         return rows
+
+    # ------------------------------------------------------------------
+    # Editable option lists (kV / detectors-modes / holders)
+    # ------------------------------------------------------------------
+    def _options_path(self):
+        return os.path.join(self.log_dir, "options.json")
+
+    def _load_default_options(self):
+        try:
+            with open(self.default_options_path, "r", encoding="utf-8") as f:
+                opts = json.load(f)
+        except Exception as e:
+            print(f"[Spectre] Could not read default options: {e}")
+            opts = {}
+        return {
+            "kv": list(opts.get("kv", [])),
+            "modes": list(opts.get("modes", [])),
+            "holders": list(opts.get("holders", [])),
+        }
+
+    def get_options(self):
+        path = self._options_path()
+        if not os.path.exists(path):
+            opts = self._load_default_options()
+            try:
+                os.makedirs(self.log_dir, exist_ok=True)
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(opts, f, indent=4, ensure_ascii=False)
+            except Exception as e:
+                print(f"[Spectre] Could not seed options.json: {e}")
+            return opts
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                opts = json.load(f)
+            return {
+                "kv": list(opts.get("kv", [])),
+                "modes": list(opts.get("modes", [])),
+                "holders": list(opts.get("holders", [])),
+            }
+        except Exception as e:
+            print(f"[Spectre] Could not read options.json: {e}")
+            return self._load_default_options()
+
+    def update_options(self, password, options):
+        if not self.admin_password or password.strip() != self.admin_password:
+            return {"ok": False, "error": "Incorrect admin password."}
+
+        def _clean(values):
+            seen, out = set(), []
+            for v in values or []:
+                v = str(v).strip()
+                if v and v not in seen:
+                    seen.add(v)
+                    out.append(v)
+            return out
+
+        cleaned = {
+            "kv": _clean(options.get("kv")),
+            "modes": _clean(options.get("modes")),
+            "holders": _clean(options.get("holders")),
+        }
+        try:
+            os.makedirs(self.log_dir, exist_ok=True)
+            with open(self._options_path(), "w", encoding="utf-8") as f:
+                json.dump(cleaned, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            return {"ok": False, "error": f"Could not save options: {e}"}
+        return {"ok": True, "options": cleaned}
 
     def get_admin_csv_path(self, password):
         if password.strip() != self.admin_password:
