@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPECTRE Public Logbook</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+
+<div class="page active page-wide">
+    <div class="title-row">
+        <h1>SPECTRE &mdash; Public Logbook</h1>
+    </div>
+
+    <div class="logs-toolbar">
+        <button id="refresh-logs-btn" class="btn">Refresh Logs</button>
+        <input type="text" id="log-filter" placeholder="Filter logs...">
+    </div>
+
+    <p class="table-hint">Click any row to expand and read the full entry.</p>
+
+    <div class="table-wrapper">
+        <table id="log-table" class="expandable">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Session</th>
+                    <th>Proposal</th>
+                    <th>Title</th>
+                    <th>kV</th>
+                    <th>Modes</th>
+                    <th>Holders</th>
+                    <th class="col-report">Report</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <button id="download-csv-btn" class="btn outline">Download Admin CSV (password required)</button>
+
+    <div id="logs-status" class="status-msg"></div>
+</div>
+
+<script src="static/public_logs.js"></script>
+</body>
+</html>

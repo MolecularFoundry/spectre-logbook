@@ -1,0 +1,26 @@
+{
+    "kv": [
+        "60kV",
+        "200kV",
+        "300kV"
+    ],
+    "modes": [
+        "Monochromator",
+        "UltiMono",
+        "Ultra-X EDS",
+        "EMPAD",
+        "K3",
+        "EELS",
+        "EFTEM Imaging",
+        "Lorentz",
+        "Mönch (light injection)",
+        "CL"
+    ],
+    "holders": [
+        "Ultra-X DT",
+        "Ultra-X Tomography (Fischione)",
+        "Ultra-X Cryo (Simple Origin)",
+        "CL Cryo (MelBuild)",
+        "Other (custom)"
+    ]
+}
