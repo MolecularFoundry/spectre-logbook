@@ -176,9 +176,41 @@ h1 {
     margin-right: 6px;
 }
 
+/* ---- Admin gear ---- */
+.gear-btn {
+    position: fixed;
+    top: 10px;
+    right: 14px;
+    z-index: 1100;
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    color: #ecf0f1;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.gear-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(45deg);
+}
+
 /* ---- Admin options editor ---- */
-.admin-editor {
-    margin-top: 20px;
+.admin-modal {
+    max-width: 520px;
+    width: 90%;
+    text-align: left;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.modal-title {
+    font-size: 18px;
+    margin-bottom: 16px;
 }
 
 .admin-list-group {
@@ -374,6 +406,27 @@ h1 {
     position: sticky;
     top: 0;
     cursor: pointer;
+}
+
+/* Drag handle straddling each header's left border for column resizing. */
+.col-resizer {
+    position: absolute;
+    top: 0;
+    left: -3px;
+    width: 6px;
+    height: 100%;
+    cursor: col-resize;
+    user-select: none;
+}
+
+.col-resizer:hover {
+    background: #bcd5e6;
+}
+
+/* Keep a consistent resize cursor and avoid text selection while dragging. */
+body.col-resizing {
+    cursor: col-resize;
+    user-select: none;
 }
 
 /* Report is the most important column — give it the most room. */

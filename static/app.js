@@ -303,7 +303,7 @@
 
     modalLogsBtn.addEventListener("click", function () {
         logoutModal.style.display = "none";
-        window.open("public-logs", "_blank");
+        window.location.href = "public-logs";
     });
 
     // ---- Upload links (pass email + project as query params) ----
@@ -335,9 +335,12 @@
     var OPTION_LISTS = ["kv", "modes", "holders"];
     var currentOptions = { kv: [], modes: [], holders: [] };
 
-    var adminPassword = document.getElementById("admin-password");
+    var adminGear = document.getElementById("admin-gear");
+    var adminModal = document.getElementById("admin-modal");
     var adminSaveBtn = document.getElementById("admin-save-btn");
+    var adminCloseBtn = document.getElementById("admin-close-btn");
     var adminStatus = document.getElementById("admin-status");
+    var adminPassword = "";
 
     // Render the user-facing checkboxes for each list, preserving checked values.
     function renderCheckboxes() {
@@ -415,17 +418,44 @@
         });
     });
 
+    // Gear icon: prompt for password, verify, then reveal the editor.
+    adminGear.addEventListener("click", function () {
+        var password = prompt("Enter admin password:");
+        if (!password) return;
+        fetch("api/admin-verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: password }),
+        })
+            .then(function (r) {
+                return r.json().then(function (d) { return { ok: r.ok && d.ok }; });
+            })
+            .then(function (res) {
+                if (!res.ok) {
+                    alert("Incorrect admin password.");
+                    return;
+                }
+                adminPassword = password;
+                renderAdminLists();
+                adminStatus.textContent = "";
+                adminModal.style.display = "flex";
+            })
+            .catch(function (err) {
+                alert("Verification failed: " + err);
+            });
+    });
+
+    adminCloseBtn.addEventListener("click", function () {
+        adminModal.style.display = "none";
+        adminPassword = "";
+    });
+
     // Save updated options (password-gated on the backend)
     adminSaveBtn.addEventListener("click", function () {
-        var password = adminPassword.value.trim();
-        if (!password) {
-            showStatus(adminStatus, "Admin password is required.", true);
-            return;
-        }
         fetch("api/admin-options", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password: password, options: currentOptions }),
+            body: JSON.stringify({ password: adminPassword, options: currentOptions }),
         })
             .then(function (r) {
                 return r.json().then(function (d) { return { ok: r.ok, data: d }; });
@@ -440,6 +470,11 @@
                 renderCheckboxes();
                 renderAdminLists();
                 showStatus(adminStatus, "Options saved.", false);
+                setTimeout(function () {
+                    adminModal.style.display = "none";
+                    adminPassword = "";
+                    adminStatus.textContent = "";
+                }, 800);
             })
             .catch(function (err) {
                 showStatus(adminStatus, err.message || "Save failed.", true);

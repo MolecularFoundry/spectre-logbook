@@ -579,8 +579,11 @@ class SpectreBackend:
             print(f"[Spectre] Could not read options.json: {e}")
             return self._load_default_options()
 
+    def verify_admin(self, password):
+        return bool(self.admin_password) and password.strip() == self.admin_password
+
     def update_options(self, password, options):
-        if not self.admin_password or password.strip() != self.admin_password:
+        if not self.verify_admin(password):
             return {"ok": False, "error": "Incorrect admin password."}
 
         def _clean(values):

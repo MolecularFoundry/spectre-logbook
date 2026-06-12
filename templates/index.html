@@ -11,9 +11,53 @@
 <!-- Tab Navigation -->
 <nav class="tab-nav">
     <button class="tab-btn active" data-page="login">Login</button>
-    <a href="public-logs" target="_blank" class="tab-btn tab-link">Public Logs</a>
+    <a href="public-logs" class="tab-btn tab-link">Public Logs</a>
     <a href="http://localhost:5000" target="_blank" class="tab-btn tab-link" id="upload-tab">Upload Data to Crucible</a>
 </nav>
+
+<!-- Admin settings gear (top-right) -->
+<button id="admin-gear" class="gear-btn" title="Admin: edit options" aria-label="Admin settings">&#9881;</button>
+
+<!-- Admin options editor modal -->
+<div id="admin-modal" class="modal-overlay" style="display:none;">
+    <div class="modal admin-modal">
+        <h2 class="modal-title">Edit Options</h2>
+
+        <div class="admin-list-group">
+            <h3>kV options</h3>
+            <ul id="admin-kv-list" class="admin-list"></ul>
+            <div class="admin-add-row">
+                <input type="text" id="admin-kv-new" placeholder="Add kV option">
+                <button type="button" class="btn outline admin-add-btn" data-list="kv">Add</button>
+            </div>
+        </div>
+
+        <div class="admin-list-group">
+            <h3>Detector / Mode options</h3>
+            <ul id="admin-modes-list" class="admin-list"></ul>
+            <div class="admin-add-row">
+                <input type="text" id="admin-modes-new" placeholder="Add detector/mode option">
+                <button type="button" class="btn outline admin-add-btn" data-list="modes">Add</button>
+            </div>
+        </div>
+
+        <div class="admin-list-group">
+            <h3>Holder options</h3>
+            <ul id="admin-holders-list" class="admin-list"></ul>
+            <div class="admin-add-row">
+                <input type="text" id="admin-holders-new" placeholder="Add holder option">
+                <button type="button" class="btn outline admin-add-btn" data-list="holders">Add</button>
+            </div>
+        </div>
+
+        <div id="admin-status" class="status-msg"></div>
+
+        <div class="modal-buttons">
+            <button id="admin-save-btn" class="btn primary">Save Options</button>
+            <button id="admin-close-btn" class="btn">Close</button>
+        </div>
+    </div>
+</div>
 
 <!-- Logout modal -->
 <div id="logout-modal" class="modal-overlay" style="display:none;">
@@ -74,47 +118,6 @@
 
     <button id="login-btn" class="btn primary">Login and Save Metadata</button>
     <div id="login-status" class="status-msg"></div>
-
-    <!-- Admin: edit the option lists shown to users -->
-    <details class="instructions admin-editor">
-        <summary>Admin: Edit Options (kV / Detectors / Holders)</summary>
-        <div class="instructions-body">
-            <div class="form-group">
-                <label for="admin-password">Admin password:</label>
-                <input type="password" id="admin-password" placeholder="Required to save changes">
-            </div>
-
-            <div class="admin-list-group">
-                <h3>kV options</h3>
-                <ul id="admin-kv-list" class="admin-list"></ul>
-                <div class="admin-add-row">
-                    <input type="text" id="admin-kv-new" placeholder="Add kV option">
-                    <button type="button" class="btn outline admin-add-btn" data-list="kv">Add</button>
-                </div>
-            </div>
-
-            <div class="admin-list-group">
-                <h3>Detector / Mode options</h3>
-                <ul id="admin-modes-list" class="admin-list"></ul>
-                <div class="admin-add-row">
-                    <input type="text" id="admin-modes-new" placeholder="Add detector/mode option">
-                    <button type="button" class="btn outline admin-add-btn" data-list="modes">Add</button>
-                </div>
-            </div>
-
-            <div class="admin-list-group">
-                <h3>Holder options</h3>
-                <ul id="admin-holders-list" class="admin-list"></ul>
-                <div class="admin-add-row">
-                    <input type="text" id="admin-holders-new" placeholder="Add holder option">
-                    <button type="button" class="btn outline admin-add-btn" data-list="holders">Add</button>
-                </div>
-            </div>
-
-            <button id="admin-save-btn" class="btn primary">Save Options</button>
-            <div id="admin-status" class="status-msg"></div>
-        </div>
-    </details>
 </div>
 
 <!-- ================================================================ -->

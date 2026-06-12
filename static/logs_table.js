@@ -1,15 +1,11 @@
 /* ================================================================
-   SPECTRE Public Logbook — standalone page logic
+   SPECTRE Public Logbook — shared table logic.
+   Used by the in-app Public Logs page and the standalone /public-logs
+   page. Both share the same element IDs.
    ================================================================ */
 
-(function () {
+window.SpectreLogs = (function () {
     "use strict";
-
-    var logTableBody = document.querySelector("#log-table tbody");
-    var refreshBtn = document.getElementById("refresh-logs-btn");
-    var downloadCsvBtn = document.getElementById("download-csv-btn");
-    var logsStatus = document.getElementById("logs-status");
-    var logFilter = document.getElementById("log-filter");
 
     var COLUMNS = [
         { key: "timestamp", label: "Timestamp" },
@@ -23,7 +19,11 @@
         { key: "report", label: "Report" },
     ];
 
+    var initialized = false;
+    var logTableBody, logFilter, logsStatus;
+
     function showStatus(msg, isError) {
+        if (!logsStatus) return;
         logsStatus.textContent = msg;
         logsStatus.className = "status-msg " + (isError ? "error" : "success");
         if (!isError) {
@@ -59,7 +59,8 @@
         return detailTr;
     }
 
-    function refreshLogs() {
+    function refresh() {
+        if (!logTableBody) return;
         fetch("api/public-logs")
             .then(function (r) { return r.json(); })
             .then(function (rows) {
@@ -90,6 +91,7 @@
     }
 
     function applyFilter() {
+        if (!logFilter || !logTableBody) return;
         var f = logFilter.value.toLowerCase();
         var dataRows = logTableBody.querySelectorAll("tr.data-row");
         dataRows.forEach(function (row) {
@@ -103,32 +105,7 @@
         });
     }
 
-    logFilter.addEventListener("keyup", applyFilter);
-    refreshBtn.addEventListener("click", refreshLogs);
-
-    // ---- Column sorting (data rows keep their detail rows attached) ----
-    document.querySelectorAll("#log-table th").forEach(function (th, colIdx) {
-        var ascending = true;
-        th.addEventListener("click", function () {
-            var dataRows = Array.from(logTableBody.querySelectorAll("tr.data-row"));
-            dataRows.sort(function (a, b) {
-                var aText = a.cells[colIdx].textContent;
-                var bText = b.cells[colIdx].textContent;
-                return ascending ? aText.localeCompare(bText) : bText.localeCompare(aText);
-            });
-            ascending = !ascending;
-            dataRows.forEach(function (row) {
-                var detail = row.nextElementSibling;
-                logTableBody.appendChild(row);
-                if (detail && detail.classList.contains("detail-row")) {
-                    logTableBody.appendChild(detail);
-                }
-            });
-        });
-    });
-
-    // ---- Admin CSV download ----
-    downloadCsvBtn.addEventListener("click", function () {
+    function downloadCsv() {
         var password = prompt("Enter admin password:");
         if (!password) return;
 
@@ -157,7 +134,95 @@
             .catch(function (err) {
                 showStatus(err.message || "Download failed.", true);
             });
-    });
+    }
 
-    refreshLogs();
+    // Add a drag handle on each column's left border so users can widen a
+    // column and read long values (e.g. the Report) inline without expanding
+    // every row. Grabbing the border moves it under the cursor: dragging left
+    // grows the column (and shrinks its left neighbour), dragging right does
+    // the reverse — so the box appears to expand toward the drag direction.
+    function enableColumnResize() {
+        var ths = Array.prototype.slice.call(document.querySelectorAll("#log-table th"));
+        ths.forEach(function (th, idx) {
+            if (idx === 0) return; // first column has no left neighbour to trade width with
+            var prevTh = ths[idx - 1];
+
+            var handle = document.createElement("span");
+            handle.className = "col-resizer";
+            th.appendChild(handle);
+
+            var startX, startWidth, prevStartWidth;
+
+            function onMove(e) {
+                var delta = e.pageX - startX;
+                th.style.width = Math.max(40, startWidth - delta) + "px";
+                prevTh.style.width = Math.max(40, prevStartWidth + delta) + "px";
+            }
+
+            function onUp() {
+                document.removeEventListener("mousemove", onMove);
+                document.removeEventListener("mouseup", onUp);
+                document.body.classList.remove("col-resizing");
+            }
+
+            // Don't let the drag trigger the header's sort handler.
+            handle.addEventListener("click", function (e) { e.stopPropagation(); });
+            handle.addEventListener("mousedown", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                startX = e.pageX;
+                startWidth = th.offsetWidth;
+                prevStartWidth = prevTh.offsetWidth;
+                document.body.classList.add("col-resizing");
+                document.addEventListener("mousemove", onMove);
+                document.addEventListener("mouseup", onUp);
+            });
+        });
+    }
+
+    // Wire handlers once, then (re)load the data. Safe to call repeatedly.
+    function init() {
+        if (initialized) {
+            refresh();
+            return;
+        }
+        logTableBody = document.querySelector("#log-table tbody");
+        if (!logTableBody) return;
+        logFilter = document.getElementById("log-filter");
+        logsStatus = document.getElementById("logs-status");
+
+        var refreshBtn = document.getElementById("refresh-logs-btn");
+        var downloadCsvBtn = document.getElementById("download-csv-btn");
+
+        if (logFilter) logFilter.addEventListener("keyup", applyFilter);
+        if (refreshBtn) refreshBtn.addEventListener("click", refresh);
+        if (downloadCsvBtn) downloadCsvBtn.addEventListener("click", downloadCsv);
+
+        enableColumnResize();
+
+        document.querySelectorAll("#log-table th").forEach(function (th, colIdx) {
+            var ascending = true;
+            th.addEventListener("click", function () {
+                var dataRows = Array.from(logTableBody.querySelectorAll("tr.data-row"));
+                dataRows.sort(function (a, b) {
+                    var aText = a.cells[colIdx].textContent;
+                    var bText = b.cells[colIdx].textContent;
+                    return ascending ? aText.localeCompare(bText) : bText.localeCompare(aText);
+                });
+                ascending = !ascending;
+                dataRows.forEach(function (row) {
+                    var detail = row.nextElementSibling;
+                    logTableBody.appendChild(row);
+                    if (detail && detail.classList.contains("detail-row")) {
+                        logTableBody.appendChild(detail);
+                    }
+                });
+            });
+        });
+
+        initialized = true;
+        refresh();
+    }
+
+    return { init: init, refresh: refresh };
 })();

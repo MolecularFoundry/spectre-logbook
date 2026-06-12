@@ -66,6 +66,13 @@ def options():
     return jsonify(backend.get_options())
 
 
+@api.route("/api/admin-verify", methods=["POST"])
+def admin_verify():
+    data = request.get_json(force=True)
+    ok = backend.verify_admin(data.get("password", ""))
+    return jsonify({"ok": ok}), (200 if ok else 403)
+
+
 @api.route("/api/admin-options", methods=["POST"])
 def admin_options():
     data = request.get_json(force=True)

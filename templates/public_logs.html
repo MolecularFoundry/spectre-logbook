@@ -3,22 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPECTRE Public Logbook</title>
+    <title>SPECTRE Microscope Logbook</title>
     <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
 
+<!-- Tab Navigation (mirrors the main app so the public view feels in-app) -->
+<nav class="tab-nav">
+    <a href="/" class="tab-btn tab-link">Login</a>
+    <a href="public-logs" class="tab-btn tab-link active">Public Logs</a>
+    <a href="http://localhost:5000" target="_blank" class="tab-btn tab-link" id="upload-tab">Upload Data to Crucible</a>
+</nav>
+
 <div class="page active page-wide">
-    <div class="title-row">
-        <h1>SPECTRE &mdash; Public Logbook</h1>
-    </div>
+    <h1>SPECTRE Microscope &mdash; Public Logbook</h1>
 
     <div class="logs-toolbar">
         <button id="refresh-logs-btn" class="btn">Refresh Logs</button>
         <input type="text" id="log-filter" placeholder="Filter logs...">
     </div>
 
-    <p class="table-hint">Click any row to expand and read the full entry.</p>
+    <p class="table-hint">Click any row to expand and read the full entry, or drag a column border to resize.</p>
 
     <div class="table-wrapper">
         <table id="log-table" class="expandable">
@@ -44,6 +49,7 @@
     <div id="logs-status" class="status-msg"></div>
 </div>
 
-<script src="static/public_logs.js"></script>
+<script src="static/logs_table.js"></script>
+<script>SpectreLogs.init();</script>
 </body>
 </html>
