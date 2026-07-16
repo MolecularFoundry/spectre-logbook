@@ -22,7 +22,6 @@
     var holderOther = document.getElementById("holder-other");
     var annotate = document.getElementById("annotate");
     var report = document.getElementById("report");
-    var updateBtn = document.getElementById("update-btn");
     var logoutBtn = document.getElementById("logout-btn");
     var logbookStatus = document.getElementById("logbook-status");
 
@@ -233,35 +232,6 @@
             report_public: report.value.trim(),
         };
     }
-
-    // ---- Update metadata ----
-    updateBtn.addEventListener("click", function () {
-        var data = collectLogbookData();
-        fetch("api/update", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-        })
-            .then(function (r) { return r.json(); })
-            .then(function (result) {
-                if (!result.ok) {
-                    showStatus(logbookStatus, result.error, true);
-                    return;
-                }
-                // Flash button green briefly
-                var origText = updateBtn.textContent;
-                updateBtn.textContent = "Saved!";
-                updateBtn.classList.add("flash-success");
-                setTimeout(function () {
-                    updateBtn.textContent = origText;
-                    updateBtn.classList.remove("flash-success");
-                }, 1500);
-                showStatus(logbookStatus, result.message, false);
-            })
-            .catch(function (err) {
-                showStatus(logbookStatus, "Update error: " + err, true);
-            });
-    });
 
     // ---- Logout ----
     logoutBtn.addEventListener("click", function () {
