@@ -14,7 +14,6 @@
     var nameInput = document.getElementById("name-input");
     var orcidInput = document.getElementById("orcid-input");
     var proposalBox = document.getElementById("proposal-box");
-    var sessionInput = document.getElementById("session-input");
     var loginBtn = document.getElementById("login-btn");
     var loginStatus = document.getElementById("login-status");
 
@@ -90,7 +89,6 @@
         emailInput.value = "";
         nameInput.value = "";
         orcidInput.value = "";
-        sessionInput.value = "";
         proposalBox.innerHTML = '<option value="">-- enter email to load projects --</option>';
         loginStatus.textContent = "";
     }
@@ -182,11 +180,9 @@
     loginBtn.addEventListener("click", function () {
         var email = emailInput.value.trim();
         var name = nameInput.value.trim();
-        var sessionName = sessionInput.value.trim();
 
         if (!email) { showStatus(loginStatus, "Email is required.", true); return; }
         if (!name) { showStatus(loginStatus, "Name is required.", true); return; }
-        if (!sessionName) { showStatus(loginStatus, "Session name is required.", true); return; }
 
         var proposalText = proposalBox.options[proposalBox.selectedIndex]
             ? proposalBox.options[proposalBox.selectedIndex].textContent
@@ -197,7 +193,6 @@
             user_name: name,
             orcid: orcidInput.value.trim(),
             proposal: proposalText,
-            session_name: sessionName,
         };
 
         fetch("api/login", {
