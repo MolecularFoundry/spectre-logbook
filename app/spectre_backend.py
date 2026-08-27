@@ -16,6 +16,7 @@ import re
 import mfid
 import subprocess
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from crucible import CrucibleClient
 
@@ -52,7 +53,9 @@ class SpectreBackend:
         return re.sub(r'[^A-Za-z0-9._-]+', '_', s.strip())[:80] if s else ""
 
     def _now(self):
-        return datetime.now().isoformat(sep=' ', timespec='minutes')
+        return datetime.now(ZoneInfo("America/Los_Angeles")).isoformat(
+            sep=' ', timespec='minutes'
+        )
 
     def _ensure_dirs(self):
         os.makedirs(self.log_dir, exist_ok=True)
