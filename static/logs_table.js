@@ -10,7 +10,6 @@ window.SpectreLogs = (function () {
     var COLUMNS = [
         { key: "timestamp", label: "Timestamp" },
         { key: "user", label: "User" },
-        { key: "session", label: "Session" },
         { key: "proposal", label: "Proposal" },
         { key: "title", label: "Title" },
         { key: "kv", label: "kV" },
@@ -38,6 +37,24 @@ window.SpectreLogs = (function () {
         return title && title !== proposal ? title : "";
     }
 
+    function formatTimestamp(value) {
+        if (!value) return "";
+
+        var normalized = String(value).replace(" ", "T");
+        var date = new Date(normalized);
+        if (Number.isNaN(date.getTime())) return value;
+
+        return new Intl.DateTimeFormat("en-US", {
+            timeZone: "America/Los_Angeles",
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true
+        }).format(date);
+    }
+
     function buildDetail(row) {
         var detailTr = document.createElement("tr");
         detailTr.className = "detail-row";
@@ -46,7 +63,8 @@ window.SpectreLogs = (function () {
         var dl = document.createElement("dl");
         dl.className = "detail-grid";
         COLUMNS.forEach(function (col) {
-            var value = col.key === "title" ? displayTitle(row) : (row[col.key] || "");
+            var rawValue = row[col.key] || "";
+            var value = col.key === "title" ? displayTitle(row) : (col.key === "timestamp" ? formatTimestamp(rawValue) : rawValue);
             var dt = document.createElement("dt");
             dt.textContent = col.label;
             var dd = document.createElement("dd");
@@ -71,7 +89,8 @@ window.SpectreLogs = (function () {
                     COLUMNS.forEach(function (col) {
                         var td = document.createElement("td");
                         if (col.key === "report") td.className = "col-report";
-                        td.textContent = col.key === "title" ? displayTitle(row) : (row[col.key] || "");
+                        var value = col.key === "title" ? displayTitle(row) : (col.key === "timestamp" ? formatTimestamp(row[col.key]) : (row[col.key] || ""));
+                        td.textContent = value;
                         tr.appendChild(td);
                     });
                     var detailTr = buildDetail(row);
