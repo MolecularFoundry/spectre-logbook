@@ -219,7 +219,6 @@ class SpectreBackend:
             rows.append({
                 "timestamp": e.get("timestamp", ""),
                 "user": e.get("user_name", ""),
-                "session": e.get("session_name", ""),
                 "proposal": e.get("proposal", ""),
                 "title": e.get("proposal_title", ""),
                 "kv": ", ".join(e.get("kv", [])),
@@ -234,12 +233,12 @@ class SpectreBackend:
             "<style>body{font-family:Arial,sans-serif;margin:16px}table{border-collapse:collapse;width:100%}"
             "th,td{border:1px solid #ddd;padding:8px}th{background:#f8f8f8;position:sticky;top:0}</style>",
             "<h2>SPECTRE — Public Log Viewer</h2>",
-            "<table><thead><tr><th>Timestamp</th><th>User</th><th>Session</th><th>Proposal</th>"
+            "<table><thead><tr><th>Timestamp</th><th>User</th><th>Proposal</th>"
             "<th>Title</th><th>kV</th><th>Modes</th><th>Holders</th><th>Report</th></tr></thead><tbody>",
         ]
         for r in rows:
             html.append(
-                f"<tr><td>{r['timestamp']}</td><td>{r['user']}</td><td>{r['session']}</td>"
+                f"<tr><td>{r['timestamp']}</td><td>{r['user']}</td>"
                 f"<td>{r['proposal']}</td><td>{r['title']}</td><td>{r['kv']}</td>"
                 f"<td>{r['modes']}</td><td>{r['holders']}</td><td>{r['report']}</td></tr>"
             )
@@ -524,7 +523,6 @@ class SpectreBackend:
             rows.append({
                 "timestamp": e.get("timestamp", ""),
                 "user": e.get("user_name", ""),
-                "session": e.get("session_name", ""),
                 "proposal": e.get("proposal", ""),
                 "title": e.get("proposal_title", ""),
                 "kv": ", ".join(e.get("kv", [])),
