@@ -437,8 +437,8 @@ class SpectreBackend:
     # Email / project lookups (via CrucibleClient)
     # ------------------------------------------------------------------
     def lookup_email(self, email):
-        if not email or "@lbl.gov" not in email:
-            return {"ok": False, "error": "Enter a valid @lbl.gov email."}
+        if not email:
+            return {"ok": False, "error": "Enter a valid email."}
 
         try:
             user_info = self.client.users.get(email=email)
