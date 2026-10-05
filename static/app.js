@@ -118,7 +118,7 @@
 
     function lookupEmail() {
         var email = emailInput.value.trim();
-        if (!email || email.indexOf("@lbl.gov") === -1) return;
+        if (!email) return;
 
         fetch("api/lookup-email", {
             method: "POST",
