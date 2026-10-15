@@ -64,25 +64,32 @@ class SpectreBackend:
         os.makedirs(os.path.join(self.log_dir, "admin_logs"), exist_ok=True)
 
     def _agg_paths(self):
-        agg_json = os.path.join(self.log_dir, "spectre_agg.json")
+        agg_path = os.path.join(self.log_dir, "spectre_agg.jsonl")
         admin_csv = os.path.join(self.log_dir, "admin_logs", "spectre_admin_log.csv")
         os.makedirs(os.path.dirname(admin_csv), exist_ok=True)
-        return agg_json, admin_csv
+        return agg_path, admin_csv
 
-    def _read_json_list(self, path):
+    # The aggregate log is JSON Lines (one event per line) and is only ever
+    # appended to, so a failed or partial read can never overwrite history.
+    def _read_jsonl(self, path):
+        events = []
         try:
-            with open(path, "r") as f:
-                data = json.load(f)
-                return data if isinstance(data, list) else []
+            with open(path, "r", encoding="utf-8") as f:
+                for lineno, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        events.append(json.loads(line))
+                    except json.JSONDecodeError as e:
+                        print(f"[Spectre] Skipping bad line {lineno} in {path}: {e}")
         except FileNotFoundError:
-            return []
-        except Exception as e:
-            print(f"[Spectre] Could not read JSON list from {path}: {e}")
-            return []
+            pass
+        return events
 
-    def _write_json_list(self, path, arr):
-        with open(path, "w") as f:
-            json.dump(arr, f, indent=4)
+    def _append_jsonl(self, path, obj):
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
     # ------------------------------------------------------------------
     # Snapshot / log-data collection
@@ -171,20 +178,18 @@ class SpectreBackend:
             w.writerow(row)
 
     def _append_to_aggregates(self, evt_type, data):
-        agg_json, admin_csv = self._agg_paths()
+        agg_path, admin_csv = self._agg_paths()
         base = self._snapshot(data)
         base["type"] = evt_type
         base["timestamp"] = self._now()
 
-        arr = self._read_json_list(agg_json)
-        arr.append(base.copy())
-        self._write_json_list(agg_json, arr)
+        self._append_jsonl(agg_path, base)
 
         self._append_to_admin_csv(admin_csv, base)
 
         try:
-            self._export_public_html(agg_json)
-            self._export_admin_html(agg_json)
+            self._export_public_html(agg_path)
+            self._export_admin_html(agg_path)
             self._export_main_index()
         except Exception as e:
             print(f"[Spectre] HTML export failed: {e}")
@@ -209,11 +214,11 @@ class SpectreBackend:
     # ------------------------------------------------------------------
     # HTML exports
     # ------------------------------------------------------------------
-    def _export_public_html(self, agg_json_path):
+    def _export_public_html(self, agg_path):
         out_dir = os.path.join(self.log_dir, "public_logs")
         os.makedirs(out_dir, exist_ok=True)
         out_html = os.path.join(out_dir, "index.html")
-        data = self._read_json_list(agg_json_path)
+        data = self._read_jsonl(agg_path)
         rows = []
         for e in data:
             rows.append({
@@ -246,11 +251,11 @@ class SpectreBackend:
         with open(out_html, "w", encoding="utf-8") as f:
             f.write("\n".join(html))
 
-    def _export_admin_html(self, agg_json_path):
+    def _export_admin_html(self, agg_path):
         out_dir = os.path.join(self.log_dir, "admin_logs")
         os.makedirs(out_dir, exist_ok=True)
         out_html = os.path.join(out_dir, "index.html")
-        data = self._read_json_list(agg_json_path)
+        data = self._read_jsonl(agg_path)
         rows = []
         for e in data:
             rows.append({
@@ -438,6 +443,7 @@ class SpectreBackend:
     # ------------------------------------------------------------------
     def lookup_email(self, email):
         if not email:
+            print('no email')
             return {"ok": False, "error": "Enter a valid email."}
 
         try:
@@ -514,8 +520,8 @@ class SpectreBackend:
     # Public log viewer
     # ------------------------------------------------------------------
     def get_public_logs(self):
-        agg_json, _ = self._agg_paths()
-        data = self._read_json_list(agg_json)
+        agg_path, _ = self._agg_paths()
+        data = self._read_jsonl(agg_path)
         rows = []
         for e in data:
             if e.get("type") != "logout":
