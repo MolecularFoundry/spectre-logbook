@@ -16,6 +16,9 @@ def create_app():
     return app
 
 
+app = create_app()
+
 if __name__ == "__main__":
-    app = create_app()
-    app.run(host="0.0.0.0", port=7788, debug=True)
+    # Local development only. Production runs under gunicorn (see Dockerfile);
+    # debug must stay off so the interactive debugger is never exposed.
+    app.run(host="0.0.0.0", port=7788, debug=False)
