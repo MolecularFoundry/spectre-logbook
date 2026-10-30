@@ -2,12 +2,41 @@
 Flask blueprint for the SPECTRE Logbook web app.
 """
 
+import os
+
 from flask import Blueprint, jsonify, render_template, request, send_file
 from app.spectre_backend import SpectreBackend
 
 api = Blueprint("api", __name__)
 
 backend = SpectreBackend()
+
+# Origins allowed to make state-changing requests. The logbook is served at
+# https://crucible.lbl.gov/spectre-logging/; override for other deployments
+# (for local dev, SPECTRE_ALLOWED_ORIGINS=http://localhost:7788).
+ALLOWED_ORIGINS = {
+    o.strip()
+    for o in os.environ.get("SPECTRE_ALLOWED_ORIGINS", "https://crucible.lbl.gov").split(",")
+    if o.strip()
+}
+
+
+@api.before_request
+def _guard_state_changing_requests():
+    """Require a JSON body and an allowed Origin for anything that writes.
+
+    Requiring application/json forces a CORS preflight for cross-site calls,
+    which no endpoint answers, so a page on another site cannot post here even
+    though the logbook shares an origin with the rest of crucible.lbl.gov.
+    """
+    if request.method in ("GET", "HEAD", "OPTIONS"):
+        return None
+    if not request.is_json:
+        return jsonify({"ok": False, "error": "JSON body required."}), 415
+    origin = request.headers.get("Origin")
+    if origin not in ALLOWED_ORIGINS:
+        return jsonify({"ok": False, "error": "Cross-origin request refused."}), 403
+    return None
 
 
 @api.route("/")
@@ -17,30 +46,30 @@ def index():
 
 @api.route("/api/login", methods=["POST"])
 def login():
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     result = backend.start_session(data)
     return jsonify(result)
 
 
 @api.route("/api/update", methods=["POST"])
 def update():
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     result = backend.update_metadata(data)
     return jsonify(result)
 
 
 @api.route("/api/logout", methods=["POST"])
 def logout():
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     result = backend.save_and_logout(data)
     return jsonify(result)
 
 
-@api.route("/api/lookup-email", methods=["POST"])
-def lookup_email():
-    data = request.get_json(force=True)
-    email = data.get("email", "").strip()
-    result = backend.lookup_email(email)
+@api.route("/api/lookup-user", methods=["POST"])
+def lookup_user():
+    data = request.get_json(silent=True) or {}
+    identifier = (data.get("identifier") or data.get("email") or "").strip()
+    result = backend.lookup_user(identifier)
     return jsonify(result)
 
 
@@ -68,14 +97,14 @@ def options():
 
 @api.route("/api/admin-verify", methods=["POST"])
 def admin_verify():
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     ok = backend.verify_admin(data.get("password", ""))
     return jsonify({"ok": ok}), (200 if ok else 403)
 
 
 @api.route("/api/admin-options", methods=["POST"])
 def admin_options():
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     password = data.get("password", "")
     result = backend.update_options(password, data.get("options", {}))
     status = 200 if result.get("ok") else 403
@@ -84,7 +113,7 @@ def admin_options():
 
 @api.route("/api/admin-csv", methods=["POST"])
 def admin_csv():
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     password = data.get("password", "")
     csv_path = backend.get_admin_csv_path(password)
     if csv_path is None:

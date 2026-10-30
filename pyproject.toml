@@ -6,8 +6,9 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "flask>=3.1.3",
+    "gunicorn>=26.2.0",
     "nano-crucible",
 ]
 
 [tool.uv.sources]
-nano-crucible = { git = "https://github.com/MolecularFoundryCrucible/nano-crucible", rev = "dev" }
+nano-crucible = { git = "https://github.com/MolecularFoundryCrucible/nano-crucible", tag = "v3.3.0" }

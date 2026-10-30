@@ -117,13 +117,13 @@
     });
 
     function lookupEmail() {
-        var email = emailInput.value.trim();
-        if (!email) return;
+        var identifier = emailInput.value.trim();
+        if (!identifier) return;
 
-        fetch("api/lookup-email", {
+        fetch("api/lookup-user", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: email }),
+            body: JSON.stringify({ identifier: identifier }),
         })
             .then(function (r) { return r.json(); })
             .then(function (data) {
@@ -205,12 +205,20 @@
                     showStatus(loginStatus, data.error || "Login failed.", true);
                     return;
                 }
-                recap.innerHTML =
-                    "<b>User:</b> " + data.user_name + "<br>" +
-                    "<b>Project:</b> " + data.proposal + "<br>" +
-                    "<b>Email:</b> " + data.email + "<br>" +
-                    "<b>Login Time:</b> " + data.login_time + "<br>" +
-                    "<b>Session ID:</b> " + data.session_id;
+                recap.replaceChildren();
+                [
+                    ["User", data.user_name],
+                    ["Project", data.proposal],
+                    ["Email", data.email],
+                    ["Login Time", data.login_time],
+                    ["Session ID", data.session_id],
+                ].forEach(function (pair, i) {
+                    if (i) recap.appendChild(document.createElement("br"));
+                    var label = document.createElement("b");
+                    label.textContent = pair[0] + ":";
+                    recap.appendChild(label);
+                    recap.appendChild(document.createTextNode(" " + (pair[1] || "")));
+                });
 
                 // Switch directly to logbook (no tab needed)
                 switchPage("logbook");

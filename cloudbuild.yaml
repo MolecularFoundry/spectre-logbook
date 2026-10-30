@@ -22,7 +22,7 @@ steps:
       - 'managed'
       - '--set-secrets'
       - >-
-        CRUCIBLE_API_KEY=crucible_admin_apikey:latest,
+        CRUCIBLE_API_KEY=spectre-logbook-crucible-apikey:latest,
         SPECTRE_ADMIN_PASSWORD=spectre-logbook-password:latest
       - '--service-account'
       - 'spectre-logbook-cloudrun@mf-crucible.iam.gserviceaccount.com'
