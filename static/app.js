@@ -16,6 +16,8 @@
     var proposalBox = document.getElementById("proposal-box");
     var loginBtn = document.getElementById("login-btn");
     var loginStatus = document.getElementById("login-status");
+    var lookedUpEmail = "";
+    var lookedUpUsername = "";
 
     // Logbook page
     var recap = document.getElementById("recap");
@@ -88,7 +90,9 @@
         emailInput.value = "";
         nameInput.value = "";
         orcidInput.value = "";
-        proposalBox.innerHTML = '<option value="">-- enter email to load projects --</option>';
+        lookedUpEmail = "";
+        lookedUpUsername = "";
+        proposalBox.innerHTML = '<option value="">-- enter email or username to load projects --</option>';
         loginStatus.textContent = "";
     }
 
@@ -117,13 +121,15 @@
     });
 
     function lookupEmail() {
-        var email = emailInput.value.trim();
-        if (!email) return;
+        var identifier = emailInput.value.trim();
+        lookedUpEmail = "";
+        lookedUpUsername = "";
+        if (!identifier) return;
 
-        fetch("api/lookup-email", {
+        fetch("api/lookup-user", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: email }),
+            body: JSON.stringify({ identifier: identifier }),
         })
             .then(function (r) { return r.json(); })
             .then(function (data) {
@@ -133,6 +139,8 @@
                 }
                 nameInput.value = data.name || "";
                 orcidInput.value = data.orcid || "";
+                lookedUpEmail = data.email || "";
+                lookedUpUsername = data.username || "";
 
                 // Populate project dropdown (sorted alphabetically by code)
                 proposalBox.innerHTML = "";
@@ -177,10 +185,10 @@
 
     // ---- Login ----
     loginBtn.addEventListener("click", function () {
-        var email = emailInput.value.trim();
+        var identifier = emailInput.value.trim();
         var name = nameInput.value.trim();
 
-        if (!email) { showStatus(loginStatus, "Email is required.", true); return; }
+        if (!identifier) { showStatus(loginStatus, "Email or username is required.", true); return; }
         if (!name) { showStatus(loginStatus, "Name is required.", true); return; }
 
         var proposalText = proposalBox.options[proposalBox.selectedIndex]
@@ -188,7 +196,8 @@
             : "";
 
         var payload = {
-            email: email,
+            email: lookedUpEmail || (identifier.indexOf("@") !== -1 ? identifier : ""),
+            username: lookedUpUsername || (identifier.indexOf("@") === -1 ? identifier : ""),
             user_name: name,
             orcid: orcidInput.value.trim(),
             proposal: proposalText,
@@ -205,12 +214,20 @@
                     showStatus(loginStatus, data.error || "Login failed.", true);
                     return;
                 }
-                recap.innerHTML =
-                    "<b>User:</b> " + data.user_name + "<br>" +
-                    "<b>Project:</b> " + data.proposal + "<br>" +
-                    "<b>Email:</b> " + data.email + "<br>" +
-                    "<b>Login Time:</b> " + data.login_time + "<br>" +
-                    "<b>Session ID:</b> " + data.session_id;
+                recap.replaceChildren();
+                [
+                    ["User", data.user_name],
+                    ["Project", data.proposal],
+                    ["Email", data.email],
+                    ["Login Time", data.login_time],
+                    ["Session ID", data.session_id],
+                ].forEach(function (pair, i) {
+                    if (i) recap.appendChild(document.createElement("br"));
+                    var label = document.createElement("b");
+                    label.textContent = pair[0] + ":";
+                    recap.appendChild(label);
+                    recap.appendChild(document.createTextNode(" " + (pair[1] || "")));
+                });
 
                 // Switch directly to logbook (no tab needed)
                 switchPage("logbook");

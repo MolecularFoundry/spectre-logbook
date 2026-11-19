@@ -18,4 +18,6 @@ ENV UV_NO_DEV=1
 WORKDIR /app
 RUN uv sync --locked
 
-CMD ["sh", "-c", "uv run python server.py --workers 1"]s
+# One worker: the backend keeps per-session state in memory, so multiple
+# workers would split a user's session across processes.
+CMD ["uv", "run", "gunicorn", "--bind", "0.0.0.0:7788", "--workers", "1", "server:app"]

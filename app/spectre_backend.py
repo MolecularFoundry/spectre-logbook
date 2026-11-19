@@ -10,6 +10,8 @@ Credentials:
 """
 
 import csv
+import hmac
+import html
 import json
 import os
 import re
@@ -19,6 +21,8 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from crucible import CrucibleClient
+
+ORCID_RE = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$")
 
 
 class SpectreBackend:
@@ -40,8 +44,10 @@ class SpectreBackend:
         self.user_log_path = None
         self.session_data = {}
 
-        # Crucible client (reads api_key and api_url from env)
-        self.client = CrucibleClient(api_url = 'https://crucible.lbl.gov/api/v3', api_key = os.environ.get("CRUCIBLE_API_KEY", ""))
+        self.client = CrucibleClient(
+            api_url=os.environ.get("CRUCIBLE_API_URL", "https://crucible.lbl.gov/api/v4"),
+            api_key=os.environ.get("CRUCIBLE_API_KEY", ""),
+        )
 
         # Admin password from env
         self.admin_password = os.environ.get("SPECTRE_ADMIN_PASSWORD", "")
@@ -98,6 +104,7 @@ class SpectreBackend:
         return dict(
             user_name=data.get("user_name", ""),
             email=data.get("email", ""),
+            username=data.get("username", ""),
             proposal=data.get("proposal", ""),
             kv=data.get("kv", []),
             modes=data.get("modes", []),
@@ -135,6 +142,7 @@ class SpectreBackend:
             doc["session"] = {
                 "user_name": evt["snapshot"].get("user_name", ""),
                 "email": evt["snapshot"].get("email", ""),
+                "username": evt["snapshot"].get("username", ""),
                 "session_id": self.session_id,
                 "session_name": evt["snapshot"].get("session_name", ""),
                 "proposal": evt["snapshot"].get("proposal", ""),
@@ -231,7 +239,7 @@ class SpectreBackend:
                 "holders": ", ".join(e.get("holders", [])),
                 "report": e.get("report_public", ""),
             })
-        html = [
+        parts = [
             "<!DOCTYPE html>",
             "<meta charset='utf-8'>",
             "<title>SPECTRE Public Log</title>",
@@ -241,15 +249,13 @@ class SpectreBackend:
             "<table><thead><tr><th>Timestamp</th><th>User</th><th>Proposal</th>"
             "<th>Title</th><th>kV</th><th>Modes</th><th>Holders</th><th>Report</th></tr></thead><tbody>",
         ]
+        cols = ("timestamp", "user", "proposal", "title", "kv", "modes", "holders", "report")
         for r in rows:
-            html.append(
-                f"<tr><td>{r['timestamp']}</td><td>{r['user']}</td>"
-                f"<td>{r['proposal']}</td><td>{r['title']}</td><td>{r['kv']}</td>"
-                f"<td>{r['modes']}</td><td>{r['holders']}</td><td>{r['report']}</td></tr>"
-            )
-        html.append("</tbody></table>")
+            cells = "".join(f"<td>{html.escape(str(r[c]))}</td>" for c in cols)
+            parts.append(f"<tr>{cells}</tr>")
+        parts.append("</tbody></table>")
         with open(out_html, "w", encoding="utf-8") as f:
-            f.write("\n".join(html))
+            f.write("\n".join(parts))
 
     def _export_admin_html(self, agg_path):
         out_dir = os.path.join(self.log_dir, "admin_logs")
@@ -271,7 +277,7 @@ class SpectreBackend:
                 "report": e.get("report_public", ""),
                 "private": e.get("annotate_private", ""),
             })
-        html = [
+        parts = [
             "<!DOCTYPE html>",
             "<meta charset='utf-8'>",
             "<title>SPECTRE Admin Logbook</title>",
@@ -285,14 +291,12 @@ class SpectreBackend:
             "<th>Proposal</th><th>Title</th><th>kV</th><th>Modes</th><th>Holders</th>"
             "<th>Report</th><th>Private Notes</th></tr></thead><tbody>",
         ]
+        cols = ("timestamp", "user", "email", "session", "proposal", "title",
+                "kv", "modes", "holders", "report", "private")
         for r in rows:
-            html.append(
-                f"<tr><td>{r['timestamp']}</td><td>{r['user']}</td><td>{r['email']}</td>"
-                f"<td>{r['session']}</td><td>{r['proposal']}</td><td>{r['title']}</td>"
-                f"<td>{r['kv']}</td><td>{r['modes']}</td><td>{r['holders']}</td>"
-                f"<td>{r['report']}</td><td>{r['private']}</td></tr>"
-            )
-        html.append(
+            cells = "".join(f"<td>{html.escape(str(r[c]))}</td>" for c in cols)
+            parts.append(f"<tr>{cells}</tr>")
+        parts.append(
             "</tbody></table>"
             "<script>"
             "const input=document.getElementById('filterInput');"
@@ -303,28 +307,20 @@ class SpectreBackend:
             "</script>"
         )
         with open(out_html, "w", encoding="utf-8") as f:
-            f.write("\n".join(html))
+            f.write("\n".join(parts))
 
     def _export_main_index(self):
         root_html = os.path.join(self.log_dir, "index.html")
-        html = [
+        parts = [
             "<!DOCTYPE html><meta charset='utf-8'>",
             "<title>SPECTRE Logbook Portal</title>",
-            "<style>body{font-family:Arial;margin:60px;text-align:center}"
-            "button{padding:10px 20px;margin:10px;font-size:16px;}</style>",
+            "<style>body{font-family:Arial;margin:60px;text-align:center}</style>",
             "<h1>SPECTRE Logbook Portal</h1>",
             "<p>Default view: Public Logbook</p>",
-            "<iframe src='public_logs/index.html' width='100%' height='600'></iframe><br>",
-            "<button onclick='openAdmin()'>Admin Logbook Access</button>",
-            "<script>"
-            "function openAdmin(){"
-            "let p=prompt('Enter admin password:');"
-            "if(p==='spectacular@cell'){window.location.href=\"admin_logs/index.html\";}"
-            "else if(p!==null){alert('Incorrect password.');}}"
-            "</script>",
+            "<iframe src='public_logs/index.html' width='100%' height='600'></iframe>",
         ]
         with open(root_html, "w", encoding="utf-8") as f:
-            f.write("\n".join(html))
+            f.write("\n".join(parts))
 
     # ------------------------------------------------------------------
     # Session lifecycle
@@ -344,6 +340,7 @@ class SpectreBackend:
         self.session_data = {
             "user_name": name,
             "email": email,
+            "username": data.get("username", "").strip(),
             "proposal": proposal,
             "session_name": session_name,
             "orcid": data.get("orcid", "").strip(),
@@ -441,23 +438,30 @@ class SpectreBackend:
     # ------------------------------------------------------------------
     # Email / project lookups (via CrucibleClient)
     # ------------------------------------------------------------------
-    def lookup_email(self, email):
-        if not email:
-            print('no email')
-            return {"ok": False, "error": "Enter a valid email."}
+    def lookup_user(self, identifier):
+        """Resolve a user by email, username, ORCID or user MFID.
+
+        These are exact, non-admin lookups in the Crucible API, so the logbook's
+        service-account key needs only the contributor platform role (global
+        read, to list the user's projects), not administrator rights.
+        """
+        identifier = (identifier or "").strip()
+        if not identifier:
+            return {"ok": False, "error": "Enter an email or username."}
 
         try:
-            user_info = self.client.users.get(email=email)
+            user_info = self.client.users.get(identifier)
             if not user_info:
                 return {"ok": False, "error": "User not found."}
 
             full_name = f"{user_info.get('first_name', '')} {user_info.get('last_name', '')}".strip()
-            orcid = user_info.get("unique_id", "")
+            unique_id = user_info.get("unique_id", "")
+            orcid = user_info.get("orcid") or (unique_id if ORCID_RE.match(unique_id) else "")
+            email = user_info.get("email") or (identifier if "@" in identifier else "")
 
-            # Get projects for this user
             projects = []
-            if orcid:
-                projects = self.client.users.get_projects(orcid)
+            if unique_id:
+                projects = self.client.users.list_projects(unique_id)
 
             project_options = []
             for p in projects:
@@ -465,17 +469,19 @@ class SpectreBackend:
                 title = p.get("title", "")
                 if code:
                     self.title_cache[code] = title
-                    self.project_map[code] = p.get("id", "")
+                    self.project_map[code] = p.get("unique_id", "")
                     project_options.append({"code": code, "title": title})
 
             return {
                 "ok": True,
                 "name": full_name,
+                "username": user_info.get("username", ""),
+                "email": email,
                 "orcid": orcid,
                 "proposals": project_options,
             }
         except Exception as e:
-            print(f"[Spectre] Email lookup failed: {e}")
+            print(f"[Spectre] User lookup failed: {e}")
             return {"ok": False, "error": str(e)}
 
     def get_proposal_title(self, proposal_code):
@@ -505,7 +511,7 @@ class SpectreBackend:
             self.project_map = {}
             self.title_cache = {}
             for p in projects:
-                pid = p.get("id")
+                pid = p.get("unique_id")
                 code = str(p.get("project_id") or "").strip()
                 title = str(p.get("title") or "").strip()
                 if not pid or not code:
@@ -559,7 +565,9 @@ class SpectreBackend:
         }
 
     def verify_admin(self, password):
-        return bool(self.admin_password) and password.strip() == self.admin_password
+        return bool(self.admin_password) and hmac.compare_digest(
+            (password or "").strip().encode(), self.admin_password.encode()
+        )
 
     def update_options(self, password, options):
         if not self.verify_admin(password):
@@ -589,7 +597,7 @@ class SpectreBackend:
         return {"ok": True, "options": cleaned}
 
     def get_admin_csv_path(self, password):
-        if password.strip() != self.admin_password:
+        if not self.verify_admin(password):
             return None
         _, admin_csv = self._agg_paths()
         if os.path.exists(admin_csv):
