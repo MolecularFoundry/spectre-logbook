@@ -19,7 +19,7 @@ State-changing requests must send `Content-Type: application/json` and an `Origi
 ## Secrets (Secret Manager)
 
 `cloudbuild.yaml` injects:
-- `CRUCIBLE_API_KEY` from secret `spectre-logbook-crucible-apikey` (a contributor service-account key, used only by this service),
+- `CRUCIBLE_API_KEY` from secret `crucible_apikey_sa_spectre_logbook` (a contributor service-account key, used only by this service),
 - `SPECTRE_ADMIN_PASSWORD` from secret `spectre-logbook-password`.
 
 The Cloud Run runtime service account (`spectre-logbook-cloudrun@mf-crucible.iam.gserviceaccount.com`) needs `roles/secretmanager.secretAccessor` on both.
