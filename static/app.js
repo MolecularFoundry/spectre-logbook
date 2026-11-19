@@ -16,6 +16,8 @@
     var proposalBox = document.getElementById("proposal-box");
     var loginBtn = document.getElementById("login-btn");
     var loginStatus = document.getElementById("login-status");
+    var lookedUpEmail = "";
+    var lookedUpUsername = "";
 
     // Logbook page
     var recap = document.getElementById("recap");
@@ -88,7 +90,9 @@
         emailInput.value = "";
         nameInput.value = "";
         orcidInput.value = "";
-        proposalBox.innerHTML = '<option value="">-- enter email to load projects --</option>';
+        lookedUpEmail = "";
+        lookedUpUsername = "";
+        proposalBox.innerHTML = '<option value="">-- enter email or username to load projects --</option>';
         loginStatus.textContent = "";
     }
 
@@ -118,6 +122,8 @@
 
     function lookupEmail() {
         var identifier = emailInput.value.trim();
+        lookedUpEmail = "";
+        lookedUpUsername = "";
         if (!identifier) return;
 
         fetch("api/lookup-user", {
@@ -133,6 +139,8 @@
                 }
                 nameInput.value = data.name || "";
                 orcidInput.value = data.orcid || "";
+                lookedUpEmail = data.email || "";
+                lookedUpUsername = data.username || "";
 
                 // Populate project dropdown (sorted alphabetically by code)
                 proposalBox.innerHTML = "";
@@ -177,10 +185,10 @@
 
     // ---- Login ----
     loginBtn.addEventListener("click", function () {
-        var email = emailInput.value.trim();
+        var identifier = emailInput.value.trim();
         var name = nameInput.value.trim();
 
-        if (!email) { showStatus(loginStatus, "Email is required.", true); return; }
+        if (!identifier) { showStatus(loginStatus, "Email or username is required.", true); return; }
         if (!name) { showStatus(loginStatus, "Name is required.", true); return; }
 
         var proposalText = proposalBox.options[proposalBox.selectedIndex]
@@ -188,7 +196,8 @@
             : "";
 
         var payload = {
-            email: email,
+            email: lookedUpEmail || (identifier.indexOf("@") !== -1 ? identifier : ""),
+            username: lookedUpUsername || (identifier.indexOf("@") === -1 ? identifier : ""),
             user_name: name,
             orcid: orcidInput.value.trim(),
             proposal: proposalText,

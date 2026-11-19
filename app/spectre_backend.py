@@ -10,6 +10,7 @@ Credentials:
 """
 
 import csv
+import hmac
 import html
 import json
 import os
@@ -20,6 +21,8 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from crucible import CrucibleClient
+
+ORCID_RE = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$")
 
 
 class SpectreBackend:
@@ -41,8 +44,10 @@ class SpectreBackend:
         self.user_log_path = None
         self.session_data = {}
 
-        # Crucible client (reads api_key and api_url from env)
-        self.client = CrucibleClient(api_url = 'https://crucible.lbl.gov/api/v3', api_key = os.environ.get("CRUCIBLE_API_KEY", ""))
+        self.client = CrucibleClient(
+            api_url=os.environ.get("CRUCIBLE_API_URL", "https://crucible.lbl.gov/api/v4"),
+            api_key=os.environ.get("CRUCIBLE_API_KEY", ""),
+        )
 
         # Admin password from env
         self.admin_password = os.environ.get("SPECTRE_ADMIN_PASSWORD", "")
@@ -99,6 +104,7 @@ class SpectreBackend:
         return dict(
             user_name=data.get("user_name", ""),
             email=data.get("email", ""),
+            username=data.get("username", ""),
             proposal=data.get("proposal", ""),
             kv=data.get("kv", []),
             modes=data.get("modes", []),
@@ -136,6 +142,7 @@ class SpectreBackend:
             doc["session"] = {
                 "user_name": evt["snapshot"].get("user_name", ""),
                 "email": evt["snapshot"].get("email", ""),
+                "username": evt["snapshot"].get("username", ""),
                 "session_id": self.session_id,
                 "session_name": evt["snapshot"].get("session_name", ""),
                 "proposal": evt["snapshot"].get("proposal", ""),
@@ -333,6 +340,7 @@ class SpectreBackend:
         self.session_data = {
             "user_name": name,
             "email": email,
+            "username": data.get("username", "").strip(),
             "proposal": proposal,
             "session_name": session_name,
             "orcid": data.get("orcid", "").strip(),
@@ -431,9 +439,9 @@ class SpectreBackend:
     # Email / project lookups (via CrucibleClient)
     # ------------------------------------------------------------------
     def lookup_user(self, identifier):
-        """Resolve a user by email or username.
+        """Resolve a user by email, username, ORCID or user MFID.
 
-        Both are exact, non-admin lookups in the Crucible API, so the logbook's
+        These are exact, non-admin lookups in the Crucible API, so the logbook's
         service-account key needs only the contributor platform role (global
         read, to list the user's projects), not administrator rights.
         """
@@ -442,20 +450,18 @@ class SpectreBackend:
             return {"ok": False, "error": "Enter an email or username."}
 
         try:
-            if "@" in identifier:
-                user_info = self.client.users.get(email=identifier)
-            else:
-                user_info = self.client.users.get(username=identifier)
+            user_info = self.client.users.get(identifier)
             if not user_info:
                 return {"ok": False, "error": "User not found."}
 
             full_name = f"{user_info.get('first_name', '')} {user_info.get('last_name', '')}".strip()
-            orcid = user_info.get("unique_id", "")
+            unique_id = user_info.get("unique_id", "")
+            orcid = user_info.get("orcid") or (unique_id if ORCID_RE.match(unique_id) else "")
+            email = user_info.get("email") or (identifier if "@" in identifier else "")
 
-            # Get projects for this user
             projects = []
-            if orcid:
-                projects = self.client.users.get_projects(orcid)
+            if unique_id:
+                projects = self.client.users.list_projects(unique_id)
 
             project_options = []
             for p in projects:
@@ -469,6 +475,8 @@ class SpectreBackend:
             return {
                 "ok": True,
                 "name": full_name,
+                "username": user_info.get("username", ""),
+                "email": email,
                 "orcid": orcid,
                 "proposals": project_options,
             }
@@ -557,7 +565,9 @@ class SpectreBackend:
         }
 
     def verify_admin(self, password):
-        return bool(self.admin_password) and password.strip() == self.admin_password
+        return bool(self.admin_password) and hmac.compare_digest(
+            (password or "").strip().encode(), self.admin_password.encode()
+        )
 
     def update_options(self, password, options):
         if not self.verify_admin(password):
@@ -587,7 +597,7 @@ class SpectreBackend:
         return {"ok": True, "options": cleaned}
 
     def get_admin_csv_path(self, password):
-        if password.strip() != self.admin_password:
+        if not self.verify_admin(password):
             return None
         _, admin_csv = self._agg_paths()
         if os.path.exists(admin_csv):

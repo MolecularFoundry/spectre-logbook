@@ -98,42 +98,99 @@ class RequestGuardTests(unittest.TestCase):
         self.assertEqual(self.client.get("/api/options").status_code, 200)
 
 
-class LookupDispatchTests(unittest.TestCase):
-    """An '@' is looked up by email, anything else by username; neither needs admin."""
+class LookupTests(unittest.TestCase):
+    """Lookups pass the identifier to users.get() and list projects by unique_id."""
 
     class _FakeUsers:
-        def __init__(self):
+        def __init__(self, user):
+            self.user = user
             self.calls = []
 
-        def get(self, email=None, username=None):
-            self.calls.append(("email", email) if email else ("username", username))
-            return {"first_name": "A", "last_name": "B", "unique_id": "0000-0001"}
+        def get(self, user_ref):
+            self.calls.append(("get", user_ref))
+            return self.user
 
-        def get_projects(self, orcid, **kw):
+        def list_projects(self, user_ref, **kw):
+            self.calls.append(("list_projects", user_ref))
             return [{"project_id": "P1", "title": "Proj", "unique_id": "mfid-1"}]
 
-    def _backend_with_fake(self):
+    def _backend_with_fake(self, **user):
         be = SpectreBackend()
-        fake = self._FakeUsers()
+        fake = self._FakeUsers({"first_name": "A", "last_name": "B", "username": "ab", **user})
         be.client = type("C", (), {"users": fake})()
         return be, fake
 
-    def test_email_uses_email_lookup(self):
-        be, fake = self._backend_with_fake()
+    def test_email_lookup(self):
+        be, fake = self._backend_with_fake(unique_id="0000-0002-1825-0097")
         res = be.lookup_user("a@lbl.gov")
         self.assertTrue(res["ok"])
-        self.assertEqual(fake.calls, [("email", "a@lbl.gov")])
+        self.assertEqual(fake.calls, [("get", "a@lbl.gov"),
+                                      ("list_projects", "0000-0002-1825-0097")])
         self.assertEqual(res["proposals"], [{"code": "P1", "title": "Proj"}])
+        self.assertEqual(res["email"], "a@lbl.gov")
+        self.assertEqual(res["username"], "ab")
+        self.assertEqual(res["orcid"], "0000-0002-1825-0097")
 
-    def test_username_uses_username_lookup(self):
-        be, fake = self._backend_with_fake()
-        res = be.lookup_user("someuser")
+    def test_username_lookup_has_no_email(self):
+        be, fake = self._backend_with_fake(unique_id="0000-0002-1825-0097")
+        res = be.lookup_user("ab")
         self.assertTrue(res["ok"])
-        self.assertEqual(fake.calls, [("username", "someuser")])
+        self.assertEqual(fake.calls[0], ("get", "ab"))
+        self.assertEqual(res["email"], "")
+
+    def test_mfid_user_takes_orcid_from_orcid_field(self):
+        mfid = "0abcdefghjkmnpqrstvwxyz123"
+        be, fake = self._backend_with_fake(unique_id=mfid, orcid="0000-0002-1825-0097")
+        res = be.lookup_user("ab")
+        self.assertEqual(res["orcid"], "0000-0002-1825-0097")
+        self.assertEqual(fake.calls[1], ("list_projects", mfid))
+
+    def test_mfid_user_without_orcid_leaves_it_blank(self):
+        be, _ = self._backend_with_fake(unique_id="0abcdefghjkmnpqrstvwxyz123")
+        self.assertEqual(be.lookup_user("ab")["orcid"], "")
 
     def test_blank_identifier_refused(self):
         be, _ = self._backend_with_fake()
         self.assertFalse(be.lookup_user("  ")["ok"])
+
+
+class AdminPasswordTests(unittest.TestCase):
+    """No admin password configured means no admin access, even with ''."""
+
+    def test_unset_password_refuses_csv(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            be = SpectreBackend()
+            be.log_dir = tmp
+            be.admin_password = ""
+            _, csv_path = be._agg_paths()
+            open(csv_path, "w").close()
+            self.assertIsNone(be.get_admin_csv_path(""))
+            self.assertIsNone(be.get_admin_csv_path("   "))
+
+    def test_correct_password_returns_csv(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            be = SpectreBackend()
+            be.log_dir = tmp
+            be.admin_password = "s3cret"
+            _, csv_path = be._agg_paths()
+            open(csv_path, "w").close()
+            self.assertEqual(be.get_admin_csv_path("s3cret"), csv_path)
+            self.assertIsNone(be.get_admin_csv_path("wrong"))
+
+
+class UsernameLoggingTests(unittest.TestCase):
+    """A username login is logged as a username, not in the email column."""
+
+    def test_username_kept_out_of_email(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            be = SpectreBackend()
+            be.log_dir = tmp
+            be._safe_run_sync = lambda: None
+            be.start_session({"user_name": "A B", "email": "", "username": "ab"})
+            agg, _ = be._agg_paths()
+            evt = be._read_jsonl(agg)[-1]
+        self.assertEqual(evt["email"], "")
+        self.assertEqual(evt["username"], "ab")
 
 
 if __name__ == "__main__":
